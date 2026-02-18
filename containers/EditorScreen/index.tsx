@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { Poster, PosterHandle } from "@/components/Poster";
 import { Button } from "@/components/Button";
 import { Route, NormalizedPoint, PosterSettings } from "@/types";
@@ -16,13 +16,17 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
   const posterRef = useRef<PosterHandle>(null);
   const [settings, setSettings] = useState<PosterSettings>({
     title: route.name,
-    subtext: `${(route.distance / 1000).toFixed(1)} KM • ${route.date || "Unknown Date"}`,
+    subtext: route.date || "Unknown Date",
     theme: "light",
     strokeWidth: 2,
     padding: 0.15,
     backgroundColor: "#ffffff",
     strokeColor: "#000000",
   });
+
+  const elevations = useMemo(() => 
+    route.points.map(p => p.elevation).filter((e): e is number => e !== undefined),
+  [route.points]);
 
   const handleDownload = () => {
     const canvas = posterRef.current?.getCanvas();
@@ -84,7 +88,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Subtext (Stats)</label>
+                <label className="text-sm font-medium">Subtext (Date)</label>
                 <input
                   type="text"
                   value={settings.subtext}
@@ -180,6 +184,11 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             theme={settings.theme}
             strokeWidth={settings.strokeWidth}
             padding={settings.padding}
+            distance={route.distance}
+            elevationGain={route.elevationGain}
+            movingTime={route.movingTime}
+            averageSpeed={route.averageSpeed}
+            elevations={elevations}
           />
         </div>
       </main>

@@ -79,12 +79,32 @@ export const parseGPX = (xml: string): Route => {
       ? new Date(points[0].time).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
       : undefined;
 
+  // Calculate moving time (total duration for now, assuming activity is continuous)
+  let movingTime = 0;
+  if (points.length > 1 && points[0].time && points[points.length - 1].time) {
+    const start = new Date(points[0].time).getTime();
+    const end = new Date(points[points.length - 1].time).getTime();
+    movingTime = (end - start) / 1000; // in seconds
+  }
+
+  const distance = track.distance.total || 0;
+  const averageSpeed = movingTime > 0 ? distance / movingTime : 0;
+
+  // Calculate Min/Max Elevation
+  const elevations = points.map(p => p.elevation).filter((e): e is number => e !== undefined);
+  const minElevation = elevations.length > 0 ? Math.min(...elevations) : undefined;
+  const maxElevation = elevations.length > 0 ? Math.max(...elevations) : undefined;
+
   return {
     name: track.name || "Untitled Activity",
     date,
     points,
-    distance: track.distance.total || 0,
+    distance,
     elevationGain: track.elevation.pos || 0,
+    minElevation,
+    maxElevation,
+    movingTime,
+    averageSpeed,
     boundingBox,
   };
 };

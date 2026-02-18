@@ -27,6 +27,10 @@ export interface Route {
   points: Point[];
   distance: number; // In meters
   elevationGain: number; // In meters
+  maxElevation?: number;
+  minElevation?: number;
+  movingTime?: number; // In seconds
+  averageSpeed?: number; // In m/s
   boundingBox: BoundingBox;
 }
 
