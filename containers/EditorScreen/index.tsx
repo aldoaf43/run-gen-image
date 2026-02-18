@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Poster } from "@/components/Poster";
+import React, { useState, useRef } from "react";
+import { Poster, PosterHandle } from "@/components/Poster";
 import { Button } from "@/components/Button";
 import { Route, NormalizedPoint, PosterSettings } from "@/types";
 import { Settings, Download, Trash2, ArrowLeft, Palette, Type, Sliders } from "lucide-react";
@@ -13,6 +13,7 @@ interface EditorScreenProps {
 }
 
 export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
+  const posterRef = useRef<PosterHandle>(null);
   const [settings, setSettings] = useState<PosterSettings>({
     title: route.name,
     subtext: `${(route.distance / 1000).toFixed(1)} KM • ${route.date || "Unknown Date"}`,
@@ -24,8 +25,28 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
   });
 
   const handleDownload = () => {
-    // This will be implemented in a future phase (exporting the canvas)
-    alert("Export feature coming soon!");
+    const canvas = posterRef.current?.getCanvas();
+    if (!canvas) return;
+
+    try {
+      // Create a temporary link element
+      const link = document.createElement("a");
+      const fileName = `${settings.title.toLowerCase().replace(/\s+/g, "-")}-poster.png`;
+      
+      // Convert canvas to data URL
+      const dataUrl = canvas.toDataURL("image/png", 1.0);
+      
+      link.download = fileName;
+      link.href = dataUrl;
+      
+      // Append to body, trigger click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Failed to export image:", err);
+      alert("Failed to export the image. Please try again.");
+    }
   };
 
   return (
@@ -152,6 +173,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
       <main className="flex flex-1 items-center justify-center p-8 lg:p-12 overflow-hidden">
         <div className="w-full max-w-[500px] transition-transform duration-300">
           <Poster
+            ref={posterRef}
             points={points}
             title={settings.title}
             subtext={settings.subtext}

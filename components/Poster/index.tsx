@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useRef, useMemo, useImperativeHandle, forwardRef } from "react";
 import { NormalizedPoint } from "@/types";
 import { CanvasEngine } from "@/lib/canvas-engine";
 
@@ -16,10 +16,14 @@ interface PosterProps {
   strokeColor?: string;
 }
 
+export interface PosterHandle {
+  getCanvas: () => HTMLCanvasElement | null;
+}
+
 /**
  * High-performance Canvas component for rendering activity posters.
  */
-export const Poster = React.memo(({
+export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
   points,
   title = "My Activity",
   subtext = "42.2 KM",
@@ -29,8 +33,13 @@ export const Poster = React.memo(({
   padding = 0.15,
   backgroundColor,
   strokeColor,
-}: PosterProps) => {
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Expose the canvas to the parent for exporting
+  useImperativeHandle(ref, () => ({
+    getCanvas: () => canvasRef.current,
+  }));
 
   // Derived styling based on theme
   const colors = useMemo(() => {
@@ -94,6 +103,6 @@ export const Poster = React.memo(({
       />
     </div>
   );
-});
+}));
 
 Poster.displayName = "Poster";
