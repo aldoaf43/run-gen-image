@@ -82,9 +82,12 @@ export const parseGPX = (xml: string): Route => {
 
   // Calculate moving time (total duration for now, assuming activity is continuous)
   let movingTime = 0;
-  if (points.length > 1 && points[0].time && points[points.length - 1].time) {
-    const start = new Date(points[0].time).getTime();
-    const end = new Date(points[points.length - 1].time).getTime();
+  const startTimeValue = points[0]?.time;
+  const endTimeValue = points[points.length - 1]?.time;
+
+  if (points.length > 1 && startTimeValue && endTimeValue) {
+    const start = new Date(startTimeValue).getTime();
+    const end = new Date(endTimeValue).getTime();
     movingTime = (end - start) / 1000; // in seconds
   }
 
