@@ -27,7 +27,12 @@ export interface Route {
   points: Point[];
   distance: number; // In meters
   elevationGain: number; // In meters
+  maxElevation?: number;
+  minElevation?: number;
+  movingTime?: number; // In seconds
+  averageSpeed?: number; // In m/s
   boundingBox: BoundingBox;
+  activityType?: "run" | "ride" | "hike" | "other";
 }
 
 /**
@@ -44,7 +49,8 @@ export interface NormalizedPoint {
 export interface PosterSettings {
   title: string;
   subtext: string;
-  theme: "light" | "dark" | "custom";
+  theme: string;
+  isDark: boolean;
   strokeWidth: number;
   padding: number;
   backgroundColor: string;

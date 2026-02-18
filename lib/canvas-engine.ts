@@ -9,6 +9,13 @@ interface DrawOptions {
   height: number;
 }
 
+interface StatData {
+  distance: number;
+  elevationGain: number;
+  movingTime: number;
+  averageSpeed: number;
+}
+
 /**
  * Pure drawing functions for the HTML5 Canvas API.
  */
@@ -32,10 +39,10 @@ export const CanvasEngine = {
 
     const { color, lineWidth, padding, isDark, width, height } = options;
 
-    // 1. Define the Frame Area (Top 80% of the canvas)
-    const frameMargin = width * 0.1; // Balanced outer margin
+    // 1. Define the Frame Area (Top 85% of the canvas to leave room for HTML footer)
+    const frameMargin = width * 0.1; 
     const frameWidth = width - frameMargin * 2;
-    const frameHeight = height * 0.75;
+    const frameHeight = height * 0.80;
     const frameX = frameMargin;
     const frameY = frameMargin;
 
@@ -73,35 +80,34 @@ export const CanvasEngine = {
     });
 
     ctx.stroke();
+
+    // 5. Draw Start/Finish Dots
+    if (points.length > 0) {
+      const startX = routeOffsetX + points[0].x * routeDrawWidth;
+      const startY = routeOffsetY + points[0].y * routeDrawHeight;
+      const endX = routeOffsetX + points[points.length - 1].x * routeDrawWidth;
+      const endY = routeOffsetY + points[points.length - 1].y * routeDrawHeight;
+
+      // Start Dot (Filled)
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(startX, startY, lineWidth * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Finish Dot (Outline)
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth * 0.8;
+      ctx.beginPath();
+      ctx.arc(endX, endY, lineWidth * 2, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = isDark ? "#121212" : "#ffffff";
+      ctx.fill();
+    }
   },
 
   /**
-   * Draws text centered in the bottom area (footer) of the canvas.
+   * NOTE: drawElevationSparkline and drawStatGrid have been removed.
+   * Labels and statistics are now handled via HTML in the Poster component
+   * to allow for better styling, accessibility, and dynamic layout.
    */
-  drawText: (
-    ctx: CanvasRenderingContext2D,
-    text: string,
-    subtext: string,
-    color: string,
-    width: number,
-    height: number
-  ) => {
-    ctx.fillStyle = color;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    // Text area centered in the bottom 20%
-    const textZoneY = height * 0.88;
-
-    // Main Title
-    const fontSize = Math.floor(width * 0.04);
-    ctx.font = `bold ${fontSize}px var(--font-geist-sans), sans-serif`;
-    ctx.fillText(text.toUpperCase(), width / 2, textZoneY);
-
-    // Subtitle
-    const subFontSize = Math.floor(width * 0.025);
-    ctx.font = `${subFontSize}px var(--font-geist-sans), sans-serif`;
-    ctx.fillStyle = color + "80"; // 50% opacity
-    ctx.fillText(subtext.toUpperCase(), width / 2, textZoneY + fontSize * 1.2);
-  },
 };

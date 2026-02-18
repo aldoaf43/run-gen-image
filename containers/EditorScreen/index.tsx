@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { Poster, PosterHandle } from "@/components/Poster";
 import { Button } from "@/components/Button";
 import { Route, NormalizedPoint, PosterSettings } from "@/types";
-import { Settings, Download, Trash2, ArrowLeft, Palette, Type, Sliders } from "lucide-react";
+import { Settings, Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon, Footprints, Bike, Mountain, Activity } from "lucide-react";
+import { toPng } from "html-to-image";
 
 interface EditorScreenProps {
   route: Route;
@@ -12,41 +13,76 @@ interface EditorScreenProps {
   onReset: () => void;
 }
 
+const LIGHT_PALETTES = [
+  { id: "zinc", name: "Zinc", bg: "#fafafa", stroke: "#18181b" },
+  { id: "slate", name: "Slate", bg: "#f8fafc", stroke: "#0f172a" },
+  { id: "stone", name: "Stone", bg: "#fafaf9", stroke: "#1c1917" },
+  { id: "emerald", name: "Emerald", bg: "#f0fdf4", stroke: "#059669" },
+  { id: "rose", name: "Rose", bg: "#fff1f2", stroke: "#be123c" },
+];
+
+const DARK_PALETTES = [
+  { id: "midnight", name: "Midnight", bg: "#020617", stroke: "#38bdf8" },
+  { id: "obsidian", name: "Obsidian", bg: "#09090b", stroke: "#ffffff" },
+  { id: "nordic", name: "Nordic", bg: "#2e3440", stroke: "#d8dee9" },
+  { id: "forest", name: "Forest", bg: "#022c22", stroke: "#6ee7b7" },
+  { id: "deepblue", name: "Deep Blue", bg: "#082f49", stroke: "#7dd3fc" },
+];
+
 export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
   const posterRef = useRef<PosterHandle>(null);
+  const [activityType, setActivityType] = useState<Route["activityType"]>(route.activityType || "run");
+  const [isExporting, setIsExporting] = useState(false);
   const [settings, setSettings] = useState<PosterSettings>({
     title: route.name,
-    subtext: `${(route.distance / 1000).toFixed(1)} KM • ${route.date || "Unknown Date"}`,
-    theme: "light",
+    subtext: route.date || "Unknown Date",
+    theme: "zinc",
+    isDark: false,
     strokeWidth: 2,
     padding: 0.15,
-    backgroundColor: "#ffffff",
-    strokeColor: "#000000",
+    backgroundColor: "#fafafa",
+    strokeColor: "#18181b",
   });
 
-  const handleDownload = () => {
-    const canvas = posterRef.current?.getCanvas();
-    if (!canvas) return;
+  const elevations = useMemo(() => 
+    route.points.map(p => p.elevation).filter((e): e is number => e !== undefined),
+  [route.points]);
+
+  const handleDownload = async () => {
+    const node = posterRef.current?.getContainer();
+    if (!node) return;
+
+    setIsExporting(true);
 
     try {
-      // Create a temporary link element
+      // Capture the entire node (Canvas + HTML) at 3x resolution for print quality
+      const dataUrl = await toPng(node, {
+        pixelRatio: 3,
+        cacheBust: true,
+      });
+      
       const link = document.createElement("a");
       const fileName = `${settings.title.toLowerCase().replace(/\s+/g, "-")}-poster.png`;
       
-      // Convert canvas to data URL
-      const dataUrl = canvas.toDataURL("image/png", 1.0);
-      
       link.download = fileName;
       link.href = dataUrl;
-      
-      // Append to body, trigger click, and remove
-      document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
     } catch (err) {
       console.error("Failed to export image:", err);
       alert("Failed to export the image. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
+  };
+
+  const selectPalette = (palette: typeof LIGHT_PALETTES[0], isPaletteDark: boolean) => {
+    setSettings({
+      ...settings,
+      theme: palette.id,
+      isDark: isPaletteDark,
+      backgroundColor: palette.bg,
+      strokeColor: palette.stroke,
+    });
   };
 
   return (
@@ -59,9 +95,9 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             Back to Home
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2">
+            <Button variant="outline" size="sm" onClick={handleDownload} disabled={isExporting} className="gap-2">
               <Download size={16} />
-              Export
+              {isExporting ? "Exporting..." : "Export"}
             </Button>
           </div>
         </div>
@@ -75,7 +111,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Activity Title</label>
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Activity Title</label>
                 <input
                   type="text"
                   value={settings.title}
@@ -84,7 +120,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Subtext (Stats)</label>
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Subtext (Date)</label>
                 <input
                   type="text"
                   value={settings.subtext}
@@ -95,6 +131,124 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             </div>
           </div>
 
+          {/* Section: Activity Type */}
+          <div>
+            <div className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-400">
+              <Activity size={14} />
+              Activity Type
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { id: "run", icon: Footprints, label: "Run" },
+                { id: "ride", icon: Bike, label: "Ride" },
+                { id: "hike", icon: Mountain, label: "Hike" },
+                { id: "other", icon: Activity, label: "Other" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActivityType(item.id as Route["activityType"])}
+                  className={`flex flex-col items-center justify-center gap-2 rounded-lg py-3 transition-all border ${
+                    activityType === item.id 
+                      ? "bg-zinc-950 text-white border-zinc-950 dark:bg-zinc-50 dark:text-black dark:border-zinc-50" 
+                      : "bg-zinc-50 text-zinc-500 border-zinc-100 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  <item.icon size={18} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Section: Theme */}
+          <div>
+            <div className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-400">
+              <Palette size={14} />
+              Themes
+            </div>
+            
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Light Mode</label>
+                <div className="grid grid-cols-5 gap-3">
+                  {LIGHT_PALETTES.map((palette) => (
+                    <button
+                      key={palette.id}
+                      onClick={() => selectPalette(palette, false)}
+                      className={`group relative flex h-10 w-full flex-col overflow-hidden rounded-md border transition-all ${
+                        settings.theme === palette.id ? "ring-2 ring-zinc-950 ring-offset-2 dark:ring-zinc-50 dark:ring-offset-black" : "border-zinc-200 dark:border-zinc-800"
+                      }`}
+                      title={palette.name}
+                    >
+                      <div className="h-full w-full" style={{ backgroundColor: palette.bg }} />
+                      <div className="absolute inset-y-0 right-0 w-1/3" style={{ backgroundColor: palette.stroke }} />
+                      {settings.theme === palette.id && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                          <Check size={14} className="text-white mix-blend-difference" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Dark Mode</label>
+                <div className="grid grid-cols-5 gap-3">
+                  {DARK_PALETTES.map((palette) => (
+                    <button
+                      key={palette.id}
+                      onClick={() => selectPalette(palette, true)}
+                      className={`group relative flex h-10 w-full flex-col overflow-hidden rounded-md border transition-all ${
+                        settings.theme === palette.id ? "ring-2 ring-zinc-950 ring-offset-2 dark:ring-zinc-50 dark:ring-offset-black" : "border-zinc-200 dark:border-zinc-800"
+                      }`}
+                      title={palette.name}
+                    >
+                      <div className="h-full w-full" style={{ backgroundColor: palette.bg }} />
+                      <div className="absolute inset-y-0 right-0 w-1/3" style={{ backgroundColor: palette.stroke }} />
+                      {settings.theme === palette.id && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                          <Check size={14} className="text-white mix-blend-difference" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Button
+                variant={settings.theme === "custom" ? "primary" : "outline"}
+                className="w-full py-4 text-xs font-bold uppercase tracking-widest"
+                onClick={() => setSettings({ ...settings, theme: "custom" })}
+              >
+                Custom Palette
+              </Button>
+
+              {settings.theme === "custom" && (
+                <div className="mt-6 space-y-4 border-t border-zinc-100 pt-6 dark:border-zinc-900">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Background</label>
+                    <input
+                      type="color"
+                      value={settings.backgroundColor}
+                      onChange={(e) => setSettings({ ...settings, backgroundColor: e.target.value })}
+                      className="h-8 w-12 cursor-pointer rounded border-none bg-transparent"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Stroke Color</label>
+                    <input
+                      type="color"
+                      value={settings.strokeColor}
+                      onChange={(e) => setSettings({ ...settings, strokeColor: e.target.value })}
+                      className="h-8 w-12 cursor-pointer rounded border-none bg-transparent"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Section: Style */}
           <div>
             <div className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-400">
@@ -102,9 +256,34 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
               Style
             </div>
             <div className="space-y-6">
+              {/* Canvas Background Style Toggle */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Inner Canvas Style</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setSettings({ ...settings, isDark: false })}
+                    className={`flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-medium transition-all ${
+                      !settings.isDark ? "bg-zinc-950 text-white dark:bg-zinc-50 dark:text-black" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400"
+                    }`}
+                  >
+                    <Sun size={14} />
+                    Light Frame
+                  </button>
+                  <button
+                    onClick={() => setSettings({ ...settings, isDark: true })}
+                    className={`flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-medium transition-all ${
+                      settings.isDark ? "bg-zinc-950 text-white dark:bg-zinc-50 dark:text-black" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400"
+                    }`}
+                  >
+                    <Moon size={14} />
+                    Dark Frame
+                  </button>
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <label className="text-sm font-medium">Line Weight</label>
+                  <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Line Weight</label>
                   <span className="text-xs text-zinc-500">{settings.strokeWidth}px</span>
                 </div>
                 <input
@@ -120,7 +299,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
 
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <label className="text-sm font-medium">Padding</label>
+                  <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Padding</label>
                   <span className="text-xs text-zinc-500">{(settings.padding * 100).toFixed(0)}%</span>
                 </div>
                 <input
@@ -133,30 +312,6 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
                   className="w-full accent-zinc-950 dark:accent-zinc-50"
                 />
               </div>
-            </div>
-          </div>
-
-          {/* Section: Theme */}
-          <div>
-            <div className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-400">
-              <Palette size={14} />
-              Theme
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant={settings.theme === "light" ? "primary" : "outline"}
-                className="w-full rounded-xl py-8"
-                onClick={() => setSettings({ ...settings, theme: "light" })}
-              >
-                Light
-              </Button>
-              <Button
-                variant={settings.theme === "dark" ? "primary" : "outline"}
-                className="w-full rounded-xl py-8"
-                onClick={() => setSettings({ ...settings, theme: "dark" })}
-              >
-                Dark
-              </Button>
             </div>
           </div>
         </div>
@@ -178,8 +333,16 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             title={settings.title}
             subtext={settings.subtext}
             theme={settings.theme}
+            isDark={settings.isDark}
             strokeWidth={settings.strokeWidth}
             padding={settings.padding}
+            distance={route.distance}
+            elevationGain={route.elevationGain}
+            movingTime={route.movingTime}
+            averageSpeed={route.averageSpeed}
+            activityType={activityType}
+            backgroundColor={settings.backgroundColor}
+            strokeColor={settings.strokeColor}
           />
         </div>
       </main>

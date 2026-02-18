@@ -72,19 +72,59 @@ export const parseGPX = (xml: string): Route => {
 
   const boundingBox = calculateBoundingBox(points);
 
-  // Extract date from metadata or first point
-  const date = gpx.metadata.time 
-    ? new Date(gpx.metadata.time).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
-    : points[0]?.time 
-      ? new Date(points[0].time).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
-      : undefined;
+  // Extract date and time from metadata or first point
+  const startTime = gpx.metadata.time || points[0]?.time;
+  const date = startTime 
+    ? new Date(startTime).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) + 
+      " • " + 
+      new Date(startTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+    : undefined;
+
+  // Calculate moving time (total duration for now, assuming activity is continuous)
+  let movingTime = 0;
+  if (points.length > 1 && points[0].time && points[points.length - 1].time) {
+    const start = new Date(points[0].time).getTime();
+    const end = new Date(points[points.length - 1].time).getTime();
+    movingTime = (end - start) / 1000; // in seconds
+  }
+
+  const distance = track.distance.total || 0;
+  const averageSpeed = movingTime > 0 ? distance / movingTime : 0; // m/s
+
+  // Detect Activity Type
+  // Try to find it in the XML first (some GPX have <type>)
+  const typeTag = xml.match(/<type>(.*?)<\/type>/i)?.[1]?.toLowerCase() || "";
+  let activityType: Route["activityType"] = "other";
+
+  if (typeTag.includes("run")) activityType = "run";
+  else if (typeTag.includes("bike") || typeTag.includes("cycl") || typeTag.includes("ride")) activityType = "ride";
+  else if (typeTag.includes("hike") || typeTag.includes("walk")) activityType = "hike";
+  else {
+    // Fallback: Guess based on average speed (m/s)
+    // > 6 m/s (~21 km/h) is likely a ride
+    // 2-6 m/s is likely a run
+    // < 2 m/s is likely a hike/walk
+    if (averageSpeed > 6) activityType = "ride";
+    else if (averageSpeed > 2) activityType = "run";
+    else if (averageSpeed > 0) activityType = "hike";
+  }
+
+  // Calculate Min/Max Elevation
+  const elevations = points.map(p => p.elevation).filter((e): e is number => e !== undefined);
+  const minElevation = elevations.length > 0 ? Math.min(...elevations) : undefined;
+  const maxElevation = elevations.length > 0 ? Math.max(...elevations) : undefined;
 
   return {
     name: track.name || "Untitled Activity",
     date,
     points,
-    distance: track.distance.total || 0,
+    distance,
     elevationGain: track.elevation.pos || 0,
+    minElevation,
+    maxElevation,
+    movingTime,
+    averageSpeed,
+    activityType,
     boundingBox,
   };
 };
