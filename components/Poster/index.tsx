@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useMemo, useImperativeHandle, forwardRef } from "react";
-import { NormalizedPoint } from "@/types";
+import { NormalizedPoint, Route } from "@/types";
 import { CanvasEngine } from "@/lib/canvas-engine";
+import { Footprints, Bike, Mountain, Activity } from "lucide-react";
 
 interface PosterProps {
   points: NormalizedPoint[];
@@ -20,6 +21,7 @@ interface PosterProps {
   elevationGain?: number;
   movingTime?: number;
   averageSpeed?: number;
+  activityType?: Route["activityType"];
 }
 
 export interface PosterHandle {
@@ -45,6 +47,7 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
   elevationGain,
   movingTime,
   averageSpeed,
+  activityType = "run",
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -119,6 +122,16 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  // Icon Resolver
+  const ActivityIcon = useMemo(() => {
+    switch (activityType) {
+      case "run": return Footprints;
+      case "ride": return Bike;
+      case "hike": return Mountain;
+      default: return Activity;
+    }
+  }, [activityType]);
+
   return (
     <div 
       className={`relative aspect-[2/3] w-full overflow-hidden rounded shadow-xl ${className}`}
@@ -139,29 +152,32 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
         {distance !== undefined && (
           <div className="mb-8 grid w-full grid-cols-4 px-8 text-center">
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold opacity-50">DISTANCE</span>
+              <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">DISTANCE</span>
               <span className="text-xs font-bold">{(distance / 1000).toFixed(1)} KM</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold opacity-50">ELEVATION</span>
+              <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">ELEVATION</span>
               <span className="text-xs font-bold">{Math.round(elevationGain || 0)} M</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold opacity-50">TIME</span>
+              <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">TIME</span>
               <span className="text-xs font-bold">{formatTime(movingTime)}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold opacity-50">AVG PACE</span>
+              <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">AVG PACE</span>
               <span className="text-xs font-bold">{formatPace(averageSpeed)} /KM</span>
             </div>
           </div>
         )}
 
         {/* Labels */}
-        <h1 className="text-lg font-black tracking-tighter uppercase leading-none">
-          {title}
-        </h1>
-        <p className="mt-1 text-xs font-medium opacity-60 uppercase tracking-widest">
+        <div className="flex items-center gap-3">
+          <ActivityIcon size={24} strokeWidth={2.5} className="opacity-80" />
+          <h1 className="text-lg font-black tracking-tighter uppercase leading-none">
+            {title}
+          </h1>
+        </div>
+        <p className="mt-1.5 text-[10px] font-bold opacity-60 uppercase tracking-[0.2em]">
           {subtext}
         </p>
       </div>

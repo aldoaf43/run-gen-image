@@ -32,6 +32,7 @@ export interface Route {
   movingTime?: number; // In seconds
   averageSpeed?: number; // In m/s
   boundingBox: BoundingBox;
+  activityType?: "run" | "ride" | "hike" | "other";
 }
 
 /**

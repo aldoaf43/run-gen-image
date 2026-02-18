@@ -4,7 +4,7 @@ import React, { useState, useRef, useMemo } from "react";
 import { Poster, PosterHandle } from "@/components/Poster";
 import { Button } from "@/components/Button";
 import { Route, NormalizedPoint, PosterSettings } from "@/types";
-import { Settings, Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon } from "lucide-react";
+import { Settings, Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon, Footprints, Bike, Mountain, Activity } from "lucide-react";
 
 interface EditorScreenProps {
   route: Route;
@@ -30,6 +30,7 @@ const DARK_PALETTES = [
 
 export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
   const posterRef = useRef<PosterHandle>(null);
+  const [activityType, setActivityType] = useState<Route["activityType"]>(route.activityType || "run");
   const [settings, setSettings] = useState<PosterSettings>({
     title: route.name,
     subtext: route.date || "Unknown Date",
@@ -123,6 +124,35 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
                   className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:ring-zinc-50"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Section: Activity Type */}
+          <div>
+            <div className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-400">
+              <Activity size={14} />
+              Activity Type
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { id: "run", icon: Footprints, label: "Run" },
+                { id: "ride", icon: Bike, label: "Ride" },
+                { id: "hike", icon: Mountain, label: "Hike" },
+                { id: "other", icon: Activity, label: "Other" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActivityType(item.id as Route["activityType"])}
+                  className={`flex flex-col items-center justify-center gap-2 rounded-lg py-3 transition-all border ${
+                    activityType === item.id 
+                      ? "bg-zinc-950 text-white border-zinc-950 dark:bg-zinc-50 dark:text-black dark:border-zinc-50" 
+                      : "bg-zinc-50 text-zinc-500 border-zinc-100 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  <item.icon size={18} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">{item.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -306,6 +336,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             elevationGain={route.elevationGain}
             movingTime={route.movingTime}
             averageSpeed={route.averageSpeed}
+            activityType={activityType}
             backgroundColor={settings.backgroundColor}
             strokeColor={settings.strokeColor}
           />
