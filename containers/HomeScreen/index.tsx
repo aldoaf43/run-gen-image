@@ -7,14 +7,14 @@ import { parseGPXFromFile, normalizePoints } from "@/lib/gpx-utils";
 import { Poster } from "@/components/Poster";
 import { NormalizedPoint, Route } from "@/types";
 
-export const HomeScreen = () => {
+interface HomeScreenProps {
+  onUpload: (route: Route, points: NormalizedPoint[]) => void;
+}
+
+export const HomeScreen = ({ onUpload }: HomeScreenProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // State for the visual proof
-  const [route, setRoute] = useState<Route | null>(null);
-  const [points, setPoints] = useState<NormalizedPoint[]>([]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -31,13 +31,8 @@ export const HomeScreen = () => {
       const parsedRoute = await parseGPXFromFile(file);
       const normalized = normalizePoints(parsedRoute.points, parsedRoute.boundingBox);
 
-      setRoute(parsedRoute);
-      setPoints(normalized);
-
-      console.group("GPX Processed Successfully");
-      console.log("Route Name:", parsedRoute.name);
-      console.log("Distance:", (parsedRoute.distance / 1000).toFixed(2), "km");
-      console.groupEnd();
+      // Notify parent to switch to editor
+      onUpload(parsedRoute, normalized);
     } catch (err) {
       console.error("Error parsing GPX:", err);
       setError("Failed to parse GPX file. Please ensure it's a valid track.");
@@ -46,8 +41,6 @@ export const HomeScreen = () => {
       if (event.target) event.target.value = "";
     }
   };
-
-  const activityStats = route ? `${(route.distance / 1000).toFixed(1)} KM • ${route.elevationGain.toFixed(0)}m Elevation` : "42.2 KM • 2:54:12";
 
   return (
     <div className="flex flex-col">
@@ -106,14 +99,14 @@ export const HomeScreen = () => {
             <div className="relative">
               <div className="mx-auto w-full max-w-[400px]">
                 <Poster 
-                  points={points.length > 0 ? points : [
+                  points={[
                     { x: 0.1, y: 0.9 },
                     { x: 0.3, y: 0.1 },
                     { x: 0.5, y: 0.5 },
                     { x: 0.9, y: 0.1 }
                   ]}
-                  title={route?.name || "Paris Marathon 2024"}
-                  subtext={activityStats}
+                  title="Paris Marathon 2024"
+                  subtext="42.2 KM • April 14, 2024"
                   theme="light"
                   strokeWidth={2}
                 />

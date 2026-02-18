@@ -23,6 +23,7 @@ export interface BoundingBox {
  */
 export interface Route {
   name: string;
+  date?: string;
   points: Point[];
   distance: number; // In meters
   elevationGain: number; // In meters
@@ -35,4 +36,17 @@ export interface Route {
 export interface NormalizedPoint {
   x: number;
   y: number;
+}
+
+/**
+ * Customizable settings for the poster rendering.
+ */
+export interface PosterSettings {
+  title: string;
+  subtext: string;
+  theme: "light" | "dark" | "custom";
+  strokeWidth: number;
+  padding: number;
+  backgroundColor: string;
+  strokeColor: string;
 }

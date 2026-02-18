@@ -75,14 +75,20 @@ export const CanvasEngine = {
     ctx.textAlign = "center";
 
     // Main Title (Activity Name)
-    const fontSize = Math.floor(width * 0.04);
+    // Using a slightly smaller, more tracking-heavy style for minimalism
+    const fontSize = Math.floor(width * 0.035);
     ctx.font = `bold ${fontSize}px var(--font-geist-sans), sans-serif`;
+    
+    // Split title into characters for custom tracking if needed, 
+    // but for now, standard centered text with uppercase.
     ctx.fillText(text.toUpperCase(), width / 2, height * 0.88);
 
     // Subtitle (Distance, Date, etc.)
-    const subFontSize = Math.floor(width * 0.025);
+    const subFontSize = Math.floor(width * 0.022);
     ctx.font = `${subFontSize}px var(--font-geist-sans), sans-serif`;
-    ctx.fillStyle = color + "80"; // 50% opacity
-    ctx.fillText(subtext, width / 2, height * 0.92);
+    ctx.fillStyle = color + "99"; // ~60% opacity for hierarchy
+    
+    // Add a small spacer line or just padding
+    ctx.fillText(subtext.toUpperCase(), width / 2, height * 0.92);
   },
 };

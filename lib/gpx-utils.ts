@@ -72,8 +72,16 @@ export const parseGPX = (xml: string): Route => {
 
   const boundingBox = calculateBoundingBox(points);
 
+  // Extract date from metadata or first point
+  const date = gpx.metadata.time 
+    ? new Date(gpx.metadata.time).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+    : points[0]?.time 
+      ? new Date(points[0].time).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+      : undefined;
+
   return {
     name: track.name || "Untitled Activity",
+    date,
     points,
     distance: track.distance.total || 0,
     elevationGain: track.elevation.pos || 0,
