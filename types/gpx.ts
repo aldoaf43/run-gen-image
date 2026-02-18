@@ -48,7 +48,8 @@ export interface NormalizedPoint {
 export interface PosterSettings {
   title: string;
   subtext: string;
-  theme: "light" | "dark" | "custom";
+  theme: string;
+  isDark: boolean;
   strokeWidth: number;
   padding: number;
   backgroundColor: string;

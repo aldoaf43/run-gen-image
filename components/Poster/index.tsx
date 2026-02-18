@@ -9,7 +9,8 @@ interface PosterProps {
   title?: string;
   subtext?: string;
   className?: string;
-  theme?: "light" | "dark" | "custom";
+  theme?: string;
+  isDark?: boolean;
   strokeWidth?: number;
   padding?: number;
   backgroundColor?: string;
@@ -34,7 +35,8 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
   title = "My Activity",
   subtext = "42.2 KM",
   className = "",
-  theme = "dark",
+  theme = "light",
+  isDark = false,
   strokeWidth = 2,
   padding = 0.15,
   backgroundColor,
@@ -55,8 +57,11 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
   const colors = useMemo(() => {
     if (theme === "dark") return { bg: "#000000", line: "#ffffff", text: "#ffffff" };
     if (theme === "light") return { bg: "#ffffff", line: "#000000", text: "#000000" };
+    
+    // Custom & Predefined Palettes
+    const bg = backgroundColor || "#ffffff";
     const line = strokeColor || "#000000";
-    return { bg: backgroundColor || "#ffffff", line, text: line };
+    return { bg, line, text: line };
   }, [theme, backgroundColor, strokeColor]);
 
   useEffect(() => {
@@ -85,7 +90,7 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
         color: colors.line,
         lineWidth: strokeWidth,
         padding: padding,
-        isDark: theme === "dark",
+        isDark: isDark,
         width: rect.width,
         height: rect.height,
       });
@@ -93,7 +98,7 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
 
     const animationId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationId);
-  }, [points, colors, strokeWidth, padding, theme]);
+  }, [points, colors, strokeWidth, padding, isDark]);
 
   // Stat Formatting Helpers
   const formatTime = (seconds?: number) => {
@@ -132,7 +137,7 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
       >
         {/* Stats Grid */}
         {distance !== undefined && (
-          <div className="mb-6 grid w-full grid-cols-4 px-8 text-center">
+          <div className="mb-8 grid w-full grid-cols-4 px-8 text-center">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold opacity-50">DISTANCE</span>
               <span className="text-xs font-bold">{(distance / 1000).toFixed(1)} KM</span>
