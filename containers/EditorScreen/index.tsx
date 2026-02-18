@@ -5,6 +5,7 @@ import { Poster, PosterHandle } from "@/components/Poster";
 import { Button } from "@/components/Button";
 import { Route, NormalizedPoint, PosterSettings } from "@/types";
 import { Settings, Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon, Footprints, Bike, Mountain, Activity } from "lucide-react";
+import { toPng } from "html-to-image";
 
 interface EditorScreenProps {
   route: Route;
@@ -31,6 +32,7 @@ const DARK_PALETTES = [
 export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
   const posterRef = useRef<PosterHandle>(null);
   const [activityType, setActivityType] = useState<Route["activityType"]>(route.activityType || "run");
+  const [isExporting, setIsExporting] = useState(false);
   const [settings, setSettings] = useState<PosterSettings>({
     title: route.name,
     subtext: route.date || "Unknown Date",
@@ -46,28 +48,30 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
     route.points.map(p => p.elevation).filter((e): e is number => e !== undefined),
   [route.points]);
 
-  const handleDownload = () => {
-    const canvas = posterRef.current?.getCanvas();
-    if (!canvas) return;
+  const handleDownload = async () => {
+    const node = posterRef.current?.getContainer();
+    if (!node) return;
+
+    setIsExporting(true);
 
     try {
-      // Create a temporary link element
+      // Capture the entire node (Canvas + HTML) at 3x resolution for print quality
+      const dataUrl = await toPng(node, {
+        pixelRatio: 3,
+        cacheBust: true,
+      });
+      
       const link = document.createElement("a");
       const fileName = `${settings.title.toLowerCase().replace(/\s+/g, "-")}-poster.png`;
       
-      // Convert canvas to data URL
-      const dataUrl = canvas.toDataURL("image/png", 1.0);
-      
       link.download = fileName;
       link.href = dataUrl;
-      
-      // Append to body, trigger click, and remove
-      document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
     } catch (err) {
       console.error("Failed to export image:", err);
       alert("Failed to export the image. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -91,9 +95,9 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             Back to Home
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2">
+            <Button variant="outline" size="sm" onClick={handleDownload} disabled={isExporting} className="gap-2">
               <Download size={16} />
-              Export
+              {isExporting ? "Exporting..." : "Export"}
             </Button>
           </div>
         </div>
@@ -107,7 +111,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Activity Title</label>
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Activity Title</label>
                 <input
                   type="text"
                   value={settings.title}
@@ -116,7 +120,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Subtext (Date)</label>
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Subtext (Date)</label>
                 <input
                   type="text"
                   value={settings.subtext}
@@ -254,7 +258,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             <div className="space-y-6">
               {/* Canvas Background Style Toggle */}
               <div className="space-y-3">
-                <label className="text-sm font-medium">Inner Canvas Style</label>
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Inner Canvas Style</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setSettings({ ...settings, isDark: false })}
@@ -279,7 +283,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
 
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <label className="text-sm font-medium">Line Weight</label>
+                  <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Line Weight</label>
                   <span className="text-xs text-zinc-500">{settings.strokeWidth}px</span>
                 </div>
                 <input
@@ -295,7 +299,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
 
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <label className="text-sm font-medium">Padding</label>
+                  <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Padding</label>
                   <span className="text-xs text-zinc-500">{(settings.padding * 100).toFixed(0)}%</span>
                 </div>
                 <input

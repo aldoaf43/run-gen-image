@@ -72,12 +72,13 @@ export const parseGPX = (xml: string): Route => {
 
   const boundingBox = calculateBoundingBox(points);
 
-  // Extract date from metadata or first point
-  const date = gpx.metadata.time 
-    ? new Date(gpx.metadata.time).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
-    : points[0]?.time 
-      ? new Date(points[0].time).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
-      : undefined;
+  // Extract date and time from metadata or first point
+  const startTime = gpx.metadata.time || points[0]?.time;
+  const date = startTime 
+    ? new Date(startTime).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) + 
+      " • " + 
+      new Date(startTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+    : undefined;
 
   // Calculate moving time (total duration for now, assuming activity is continuous)
   let movingTime = 0;

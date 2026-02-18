@@ -25,7 +25,7 @@ interface PosterProps {
 }
 
 export interface PosterHandle {
-  getCanvas: () => HTMLCanvasElement | null;
+  getContainer: () => HTMLDivElement | null;
 }
 
 /**
@@ -50,10 +50,11 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
   activityType = "run",
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Expose the canvas to the parent for exporting
+  // Expose the container to the parent for exporting (captures HTML + Canvas)
   useImperativeHandle(ref, () => ({
-    getCanvas: () => canvasRef.current,
+    getContainer: () => containerRef.current,
   }));
 
   // Derived styling based on theme
@@ -134,6 +135,7 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
 
   return (
     <div 
+      ref={containerRef}
       className={`relative aspect-[2/3] w-full overflow-hidden rounded shadow-xl ${className}`}
       style={{ backgroundColor: colors.bg }}
     >
