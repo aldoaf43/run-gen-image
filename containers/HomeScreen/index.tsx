@@ -1,10 +1,62 @@
-import React from "react";
+"use client";
+
+import React, { useRef, useState } from "react";
 import { Button } from "@/components/Button";
-import { Upload, ArrowRight, MapPin, Layers, Download } from "lucide-react";
+import { Upload, ArrowRight, MapPin, Layers, Download, AlertCircle } from "lucide-react";
+import { parseGPXFromFile, normalizePoints } from "@/lib/gpx-utils";
 
 export const HomeScreen = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Reset state
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      const route = await parseGPXFromFile(file);
+      const normalized = normalizePoints(route.points, route.boundingBox);
+
+      console.group("GPX Processed Successfully");
+      console.log("Route Name:", route.name);
+      console.log("Distance:", (route.distance / 1000).toFixed(2), "km");
+      console.log("Elevation Gain:", route.elevationGain.toFixed(0), "m");
+      console.log("Total Points:", route.points.length);
+      console.log("Normalized Points (Preview):", normalized.slice(0, 5));
+      console.groupEnd();
+
+      // In the next step, we would navigate to the editor or update state
+      alert(`Success: ${route.name} parsed! Check the console for data.`);
+    } catch (err) {
+      console.error("Error parsing GPX:", err);
+      setError("Failed to parse GPX file. Please ensure it's a valid track.");
+    } finally {
+      setIsProcessing(false);
+      // Clear input so same file can be selected again
+      if (event.target) event.target.value = "";
+    }
+  };
+
   return (
     <div className="flex flex-col">
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept=".gpx"
+        className="hidden"
+      />
+
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-24 pb-16 sm:pt-32 sm:pb-24 lg:pt-40 lg:pb-32">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -22,15 +74,30 @@ export const HomeScreen = () => {
                 Beautifully render your GPX files from Strava, Garmin, or Wahoo into stunning, minimalist posters. 
                 Perfect for your home or as a gift for fellow athletes.
               </p>
-              <div className="flex flex-col gap-4 w-full sm:flex-row sm:w-auto">
-                <Button size="lg" className="gap-2">
-                  <Upload size={20} strokeWidth={2.5} />
-                  Upload GPX
-                </Button>
-                <Button variant="outline" size="lg" className="gap-2">
-                  View Examples
-                  <ArrowRight size={20} />
-                </Button>
+              
+              <div className="flex flex-col gap-4 w-full">
+                <div className="flex flex-col gap-4 sm:flex-row sm:w-auto">
+                  <Button 
+                    size="lg" 
+                    className="gap-2" 
+                    onClick={handleUploadClick}
+                    isLoading={isProcessing}
+                  >
+                    <Upload size={20} strokeWidth={2.5} />
+                    Upload GPX
+                  </Button>
+                  <Button variant="outline" size="lg" className="gap-2">
+                    View Examples
+                    <ArrowRight size={20} />
+                  </Button>
+                </div>
+                
+                {error && (
+                  <div className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400">
+                    <AlertCircle size={16} />
+                    {error}
+                  </div>
+                )}
               </div>
             </div>
 
