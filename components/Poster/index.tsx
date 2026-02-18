@@ -24,7 +24,7 @@ export const Poster = React.memo(({
   title = "My Activity",
   subtext = "42.2 KM",
   className = "",
-  theme = "light",
+  theme = "dark",
   strokeWidth = 2,
   padding = 0.15,
   backgroundColor,
@@ -59,7 +59,7 @@ export const Poster = React.memo(({
 
     // Initial clear & render
     const render = () => {
-      CanvasEngine.clear(ctx);
+      CanvasEngine.clear(ctx, rect.width, rect.height);
       
       // Draw Background
       ctx.fillStyle = colors.bg;
@@ -70,10 +70,13 @@ export const Poster = React.memo(({
         color: colors.line,
         lineWidth: strokeWidth,
         padding: padding,
+        isDark: theme === "dark",
+        width: rect.width,
+        height: rect.height,
       });
 
       // Draw Labels
-      CanvasEngine.drawText(ctx, title, subtext, colors.line);
+      CanvasEngine.drawText(ctx, title, subtext, colors.line, rect.width, rect.height);
     };
 
     // Use requestAnimationFrame for smooth, browser-synced rendering
