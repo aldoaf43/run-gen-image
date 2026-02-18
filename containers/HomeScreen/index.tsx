@@ -4,11 +4,17 @@ import React, { useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import { Upload, ArrowRight, MapPin, Layers, Download, AlertCircle } from "lucide-react";
 import { parseGPXFromFile, normalizePoints } from "@/lib/gpx-utils";
+import { Poster } from "@/components/Poster";
+import { NormalizedPoint, Route } from "@/types";
 
 export const HomeScreen = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // State for the visual proof
+  const [route, setRoute] = useState<Route | null>(null);
+  const [points, setPoints] = useState<NormalizedPoint[]>([]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -18,37 +24,33 @@ export const HomeScreen = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Reset state
     setIsProcessing(true);
     setError(null);
 
     try {
-      const route = await parseGPXFromFile(file);
-      const normalized = normalizePoints(route.points, route.boundingBox);
+      const parsedRoute = await parseGPXFromFile(file);
+      const normalized = normalizePoints(parsedRoute.points, parsedRoute.boundingBox);
+
+      setRoute(parsedRoute);
+      setPoints(normalized);
 
       console.group("GPX Processed Successfully");
-      console.log("Route Name:", route.name);
-      console.log("Distance:", (route.distance / 1000).toFixed(2), "km");
-      console.log("Elevation Gain:", route.elevationGain.toFixed(0), "m");
-      console.log("Total Points:", route.points.length);
-      console.log("Normalized Points (Preview):", normalized.slice(0, 5));
+      console.log("Route Name:", parsedRoute.name);
+      console.log("Distance:", (parsedRoute.distance / 1000).toFixed(2), "km");
       console.groupEnd();
-
-      // In the next step, we would navigate to the editor or update state
-      alert(`Success: ${route.name} parsed! Check the console for data.`);
     } catch (err) {
       console.error("Error parsing GPX:", err);
       setError("Failed to parse GPX file. Please ensure it's a valid track.");
     } finally {
       setIsProcessing(false);
-      // Clear input so same file can be selected again
       if (event.target) event.target.value = "";
     }
   };
 
+  const activityStats = route ? `${(route.distance / 1000).toFixed(1)} KM • ${route.elevationGain.toFixed(0)}m Elevation` : "42.2 KM • 2:54:12";
+
   return (
     <div className="flex flex-col">
-      {/* Hidden File Input */}
       <input
         type="file"
         ref={fileInputRef}
@@ -102,28 +104,21 @@ export const HomeScreen = () => {
             </div>
 
             <div className="relative">
-              <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
-                {/* Placeholder for the main hero image (a poster example) */}
-                <div className="flex h-full w-full flex-col items-center justify-center p-12 text-center">
-                  <div className="mb-8 h-4/5 w-full border border-zinc-300 dark:border-zinc-700 rounded-sm bg-white dark:bg-black p-8 shadow-sm">
-                    {/* SVG placeholder for a GPS route */}
-                    <svg viewBox="0 0 100 100" className="h-full w-full text-zinc-950 dark:text-white opacity-20">
-                      <path 
-                        d="M10,90 Q30,10 50,50 T90,10" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <div className="mt-auto space-y-1">
-                    <p className="text-sm font-bold tracking-widest uppercase">Paris Marathon 2024</p>
-                    <p className="text-xs text-zinc-500">42.2 KM • 2:54:12</p>
-                  </div>
-                </div>
+              <div className="mx-auto w-full max-w-[400px]">
+                <Poster 
+                  points={points.length > 0 ? points : [
+                    { x: 0.1, y: 0.9 },
+                    { x: 0.3, y: 0.1 },
+                    { x: 0.5, y: 0.5 },
+                    { x: 0.9, y: 0.1 }
+                  ]}
+                  title={route?.name || "Paris Marathon 2024"}
+                  subtext={activityStats}
+                  theme="light"
+                  strokeWidth={2}
+                />
               </div>
+              
               {/* Floating badges for flavor */}
               <div className="absolute -bottom-6 -left-6 hidden rounded-xl border border-zinc-200 bg-white p-4 shadow-xl dark:border-zinc-800 dark:bg-zinc-950 sm:block">
                 <div className="flex items-center gap-3">
