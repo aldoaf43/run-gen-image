@@ -141,7 +141,7 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
     >
       <canvas
         ref={canvasRef}
-        className="h-full w-full touch-none"
+        className="h-full w-full pointer-events-none"
         style={{ width: "100%", height: "100%" }}
       />
       
