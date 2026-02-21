@@ -136,7 +136,7 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
   return (
     <div 
       ref={containerRef}
-      className={`relative aspect-[2/3] w-full overflow-hidden rounded shadow-xl ${className}`}
+      className={`relative aspect-[2/3] w-full overflow-hidden rounded shadow-xl @container ${className}`}
       style={{ backgroundColor: colors.bg }}
     >
       <canvas
@@ -147,39 +147,39 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
       
       {/* HTML Overlay for Typography */}
       <div 
-        className="absolute inset-x-0 bottom-0 flex flex-col items-center pb-[8%] pt-4"
+        className="absolute inset-x-0 bottom-0 flex flex-col items-center pb-[8cqw] pt-[2cqw]"
         style={{ color: colors.text }}
       >
         {/* Stats Grid */}
         {distance !== undefined && (
-          <div className="mb-8 grid w-full grid-cols-4 px-8 text-center">
+          <div className="mb-[6cqw] grid w-full grid-cols-4 px-[8cqw] text-center">
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">DISTANCE</span>
-              <span className="text-xs font-bold">{(distance / 1000).toFixed(1)} KM</span>
+              <span className="text-[2cqw] font-bold opacity-50 uppercase tracking-widest">DISTANCE</span>
+              <span className="text-[2.8cqw] font-bold">{(distance / 1000).toFixed(1)} KM</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">ELEVATION</span>
-              <span className="text-xs font-bold">{Math.round(elevationGain || 0)} M</span>
+              <span className="text-[2cqw] font-bold opacity-50 uppercase tracking-widest">ELEVATION</span>
+              <span className="text-[2.8cqw] font-bold">{Math.round(elevationGain || 0)} M</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">TIME</span>
-              <span className="text-xs font-bold">{formatTime(movingTime)}</span>
+              <span className="text-[2cqw] font-bold opacity-50 uppercase tracking-widest">TIME</span>
+              <span className="text-[2.8cqw] font-bold">{formatTime(movingTime)}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">AVG PACE</span>
-              <span className="text-xs font-bold">{formatPace(averageSpeed)} /KM</span>
+              <span className="text-[2cqw] font-bold opacity-50 uppercase tracking-widest">AVG PACE</span>
+              <span className="text-[2.8cqw] font-bold">{formatPace(averageSpeed)} /KM</span>
             </div>
           </div>
         )}
 
         {/* Labels */}
-        <div className="flex items-center gap-3">
-          <ActivityIcon size={24} strokeWidth={2.5} className="opacity-80" />
-          <h1 className="text-lg font-black tracking-tighter uppercase leading-none">
+        <div className="flex items-center gap-[2cqw]">
+          <ActivityIcon size={32} strokeWidth={2.5} className="h-[5cqw] w-[5cqw] opacity-80" />
+          <h1 className="text-[5cqw] font-black tracking-tighter uppercase leading-none">
             {title}
           </h1>
         </div>
-        <p className="mt-1.5 text-[10px] font-bold opacity-60 uppercase tracking-[0.2em]">
+        <p className="mt-[1cqw] text-[2.2cqw] font-bold opacity-60 uppercase tracking-[0.2em]">
           {subtext}
         </p>
       </div>
