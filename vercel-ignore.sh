@@ -1,30 +1,32 @@
 #!/bin/bash
 
-# Vercel Ignored Build Step Script
-# Protocol: exit 1 to BUILD, exit 0 to SKIP
+echo "Checking deployment criteria for: $VERCEL_GIT_COMMIT_REF"
 
-echo "🔍 Checking deployment criteria for: $VERCEL_GIT_COMMIT_REF (Env: $VERCEL_ENV)"
+# 1. Check for manual skip keywords in commit message
+if [[ "$VERCEL_GIT_COMMIT_MESSAGE" == *"[skip ci]"* ]] || [[ "$VERCEL_GIT_COMMIT_MESSAGE" == *"[no build]"* ]] ; then
+  echo "🛑 Build skipped due to skip keyword in commit message."
+  exit 0;
+fi
 
-# 1. Always allow Preview deployments (Pull Requests)
+# 2. Always allow Preview deployments (Pull Requests)
+# This ensures every PR gets a unique URL for testing.
 if [[ "$VERCEL_ENV" == "preview" ]] ; then
   echo "✅ Preview build allowed."
   exit 1; 
 fi
 
-# 2. Production Logic (Only for the main branch)
-if [[ "$VERCEL_GIT_COMMIT_REF" == "main" ]] ; then
-  # Convert commit message to lowercase for case-insensitive matching
-  MESSAGE_LOWER=$(echo "$VERCEL_GIT_COMMIT_MESSAGE" | tr '[:upper:]' '[:lower:]')
-  
-  if [[ "$MESSAGE_LOWER" == *"[release]"* ]] ; then
-    echo "🚀 [release] keyword found on main. Proceeding with Production build."
-    exit 1;
-  else
-    echo "🛑 Skip: Main branch commit without [release] keyword."
-    exit 0;
-  fi
-fi
+# 3. Support GitHub Releases & Manual Production Tags
+# Regex matches: v1.0.0, 1.0.0, v1.0.0-beta.1, etc.
+VERSION_REGEX="^v?[0-9]+\.[0-9]+\.[0-9]+(-.*)?$"
 
-# 3. Default: Skip the build for everything else (experimental branches, etc.)
-echo "🛑 Build skipped: Does not meet production or preview criteria."
-exit 0;
+if [[ "$VERCEL_GIT_COMMIT_MESSAGE" == *"[release]"* ]] || \
+   ([[ "$VERCEL_GIT_COMMIT_MESSAGE" == *"Merge pull request"* ]] && [[ "$VERCEL_GIT_COMMIT_REF" == "main" ]]) || \
+   [[ "$VERCEL_GIT_COMMIT_REF" =~ $VERSION_REGEX ]] ; then
+  echo "✅ Release criteria met. Proceeding with Production build."
+  exit 1;
+else
+  # 4. Skip the build for everything else
+  # This prevents every small push to main from consuming Vercel build minutes.
+  echo "🛑 Build skipped. Commit does not meet release criteria."
+  exit 0;
+fi
