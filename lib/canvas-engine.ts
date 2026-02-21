@@ -39,10 +39,10 @@ export const CanvasEngine = {
 
     const { color, lineWidth, padding, isDark, width, height } = options;
 
-    // 1. Define the Frame Area (Top 85% of the canvas to leave room for HTML footer)
+    // 1. Define the Frame Area (Top 78% of the canvas to leave room for HTML footer)
     const frameMargin = width * 0.1; 
     const frameWidth = width - frameMargin * 2;
-    const frameHeight = height * 0.80;
+    const frameHeight = height * 0.78;
     const frameX = frameMargin;
     const frameY = frameMargin;
 
