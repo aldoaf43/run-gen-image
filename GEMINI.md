@@ -129,9 +129,9 @@ import { Map, Download, Settings } from "lucide-react";
 
 ## Code Comments
 
-- Never comment simple components or self-explanatory code.
-- Only add comments to complex functions requiring explanation (e.g., math-heavy normalization).
-- Comments should explain "why", not "what".
+- **Minimize Comments:** Do not add comments unless they are crucial and completely necessary for understanding complex logic that cannot be made self-explanatory.
+- Never comment simple components, standard hooks, or self-explanatory code.
+- If a comment is necessary, it should explain "why" a specific approach was taken, not "what" the code is doing.
 
 ---
 
