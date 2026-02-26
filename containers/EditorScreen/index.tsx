@@ -3,8 +3,8 @@
 import React, { useState, useRef, useMemo } from "react";
 import { Poster, PosterHandle } from "@/components/Poster";
 import { Button } from "@/components/Button";
-import { Route, NormalizedPoint, PosterSettings } from "@/types";
-import { Settings, Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon, Footprints, Bike, Mountain, Activity } from "lucide-react";
+import { Route, NormalizedPoint, PosterSettings, MetricType } from "@/types";
+import { Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon, Footprints, Bike, Mountain, Activity, BarChart3 } from "lucide-react";
 import { toPng } from "html-to-image";
 
 interface EditorScreenProps {
@@ -29,10 +29,43 @@ const DARK_PALETTES = [
   { id: "deepblue", name: "Deep Blue", bg: "#082f49", stroke: "#7dd3fc" },
 ];
 
+const AVAILABLE_METRICS: { id: MetricType; label: string }[] = [
+  { id: "distance", label: "Distance" },
+  { id: "elevation", label: "Elev Gain" },
+  { id: "elevationLoss", label: "Elev Loss" },
+  { id: "time", label: "Time" },
+  { id: "pace", label: "Pace" },
+  { id: "speed", label: "Speed" },
+  { id: "heartRate", label: "Heart Rate" },
+  { id: "cadence", label: "Cadence" },
+  { id: "power", label: "Power" },
+];
+
 export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
   const posterRef = useRef<PosterHandle>(null);
   const [activityType, setActivityType] = useState<Route["activityType"]>(route.activityType || "run");
   const [isExporting, setIsExporting] = useState(false);
+
+  const isMetricAvailable = (metricId: MetricType) => {
+    switch (metricId) {
+      case "distance": return route.distance > 0;
+      case "elevation": return route.elevationGain > 0;
+      case "elevationLoss": return route.elevationLoss > 0;
+      case "time": return (route.movingTime || 0) > 0;
+      case "pace":
+      case "speed": return (route.averageSpeed || 0) > 0;
+      case "heartRate": return route.avgHeartRate !== undefined;
+      case "cadence": return route.avgCadence !== undefined;
+      case "power": return route.avgPower !== undefined;
+      default: return false;
+    }
+  };
+
+  const initialMetrics = useMemo(() => {
+    const defaults: MetricType[] = ["distance", "elevation", "time", "pace"];
+    return defaults.filter(isMetricAvailable).slice(0, 4);
+  }, [route]);
+
   const [settings, setSettings] = useState<PosterSettings>({
     title: route.name,
     subtext: route.date || "Unknown Date",
@@ -42,11 +75,8 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
     padding: 0.15,
     backgroundColor: "#fafafa",
     strokeColor: "#18181b",
+    metrics: initialMetrics,
   });
-
-  const elevations = useMemo(() => 
-    route.points.map(p => p.elevation).filter((e): e is number => e !== undefined),
-  [route.points]);
 
   const handleDownload = async () => {
     const node = posterRef.current?.getContainer();
@@ -55,7 +85,6 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
     setIsExporting(true);
 
     try {
-      // Capture the entire node (Canvas + HTML) at 3x resolution for print quality
       const dataUrl = await toPng(node, {
         pixelRatio: 3,
         cacheBust: true,
@@ -85,9 +114,19 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
     });
   };
 
+  const toggleMetric = (metricId: MetricType) => {
+    setSettings((prev) => {
+      const isSelected = prev.metrics.includes(metricId);
+      if (isSelected) {
+        return { ...prev, metrics: prev.metrics.filter((m) => m !== metricId) };
+      }
+      if (prev.metrics.length >= 4) return prev;
+      return { ...prev, metrics: [...prev.metrics, metricId] };
+    });
+  };
+
   return (
     <div className="flex min-h-[calc(100vh-64px)] flex-col bg-zinc-50 dark:bg-zinc-950 lg:flex-row">
-      {/* Sidebar Controls */}
       <aside className="w-full border-r border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-black lg:max-w-md lg:overflow-y-auto">
         <div className="mb-8 flex items-center justify-between">
           <Button variant="ghost" size="sm" className="gap-2 px-0 hover:bg-transparent" onClick={onReset}>
@@ -102,8 +141,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
           </div>
         </div>
 
-        <div className="space-y-8">
-          {/* Section: Typography */}
+        <div className="space-y-8 pb-10">
           <div>
             <div className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-400">
               <Type size={14} />
@@ -131,7 +169,6 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             </div>
           </div>
 
-          {/* Section: Activity Type */}
           <div>
             <div className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-400">
               <Activity size={14} />
@@ -160,7 +197,40 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             </div>
           </div>
 
-          {/* Section: Theme */}
+          <div>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-400">
+                <BarChart3 size={14} />
+                Metrics
+              </div>
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                {settings.metrics.length}/4 Selected
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {AVAILABLE_METRICS.filter(m => isMetricAvailable(m.id)).map((metric) => {
+                const isSelected = settings.metrics.includes(metric.id);
+                const isMaxed = settings.metrics.length >= 4 && !isSelected;
+                return (
+                  <button
+                    key={metric.id}
+                    onClick={() => toggleMetric(metric.id)}
+                    disabled={isMaxed}
+                    className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-all ${
+                      isSelected
+                        ? "bg-zinc-950 border-zinc-950 text-white dark:bg-zinc-50 dark:border-zinc-50 dark:text-black"
+                        : isMaxed
+                          ? "opacity-30 cursor-not-allowed border-zinc-100 dark:border-zinc-900"
+                          : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900"
+                    }`}
+                  >
+                    {metric.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <div className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-400">
               <Palette size={14} />
@@ -249,14 +319,12 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             </div>
           </div>
 
-          {/* Section: Style */}
           <div>
             <div className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-400">
               <Sliders size={14} />
               Style
             </div>
             <div className="space-y-6">
-              {/* Canvas Background Style Toggle */}
               <div className="space-y-3">
                 <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Inner Canvas Style</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -324,7 +392,6 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
         </div>
       </aside>
 
-      {/* Main Preview Area */}
       <main className="flex flex-1 items-center justify-center p-8 lg:p-12 overflow-hidden">
         <div className="w-full max-w-[500px] transition-transform duration-300">
           <Poster
@@ -336,10 +403,15 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             isDark={settings.isDark}
             strokeWidth={settings.strokeWidth}
             padding={settings.padding}
+            metrics={settings.metrics}
             distance={route.distance}
             elevationGain={route.elevationGain}
+            elevationLoss={route.elevationLoss}
             movingTime={route.movingTime}
             averageSpeed={route.averageSpeed}
+            avgHeartRate={route.avgHeartRate}
+            avgCadence={route.avgCadence}
+            avgPower={route.avgPower}
             activityType={activityType}
             backgroundColor={settings.backgroundColor}
             strokeColor={settings.strokeColor}

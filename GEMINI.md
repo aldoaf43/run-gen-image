@@ -72,6 +72,15 @@ Handling GPS data is the technical "core" of the app. Follow these rules strictl
 2.  **Axis Flipping:** In the Canvas API, Y=0 is the top. In geographic coordinates, Latitude values increase going North (Up). You must flip the Y-coordinates during normalization to prevent the route from appearing upside down.
 3.  **Bounding Box:** Calculate the bounds (min/max Lat/Lon) of the route to center it perfectly on the canvas with a consistent margin.
 4.  **Smoothing:** Use the Ramer-Douglas-Peucker algorithm or a simple moving average to reduce "jitter" in raw GPS data.
+5.  **Indicators:** Start and finish markers must use a **fixed relative size** (relative to canvas width) rather than a multiple of the stroke width. For overlapping points (loops), use the **"Visual Cutout" pattern** (background-colored halo) to distinguish them.
+
+---
+
+## Metric & Sensor Data Handling
+
+1.  **Regex Extraction:** Since standard GPX parsers often ignore device-specific extensions, use Regex to extract and average sensor data (Heart Rate, Cadence, Power) from XML tags like `gpxtpx:hr` or `power`.
+2.  **Smart UI Filtering:** In the Editor Screen, only display metric selection options that have valid data in the uploaded file. Never show options for data points (like Power) if the file doesn't contain them.
+3.  **Dynamic Layout:** The poster stats grid must dynamically adjust its column count based on the number of selected metrics (1 to 4) to ensure optimal spacing.
 
 ---
 

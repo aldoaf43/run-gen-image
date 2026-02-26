@@ -27,12 +27,17 @@ export interface Route {
   points: Point[];
   distance: number; // In meters
   elevationGain: number; // In meters
+  elevationLoss: number; // In meters
   maxElevation?: number;
   minElevation?: number;
   movingTime?: number; // In seconds
   averageSpeed?: number; // In m/s
   boundingBox: BoundingBox;
   activityType?: "run" | "ride" | "hike" | "other";
+  // Sensor Data
+  avgHeartRate?: number;
+  avgCadence?: number;
+  avgPower?: number;
 }
 
 /**
@@ -42,6 +47,17 @@ export interface NormalizedPoint {
   x: number;
   y: number;
 }
+
+export type MetricType = 
+  | "distance" 
+  | "elevation" 
+  | "elevationLoss" 
+  | "time" 
+  | "pace" 
+  | "speed" 
+  | "heartRate" 
+  | "cadence" 
+  | "power";
 
 /**
  * Customizable settings for the poster rendering.
@@ -55,4 +71,5 @@ export interface PosterSettings {
   padding: number;
   backgroundColor: string;
   strokeColor: string;
+  metrics: MetricType[];
 }
