@@ -16,20 +16,11 @@ interface StatData {
   averageSpeed: number;
 }
 
-/**
- * Pure drawing functions for the HTML5 Canvas API.
- */
 export const CanvasEngine = {
-  /**
-   * Clears the entire canvas.
-   */
   clear: (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.clearRect(0, 0, width, height);
   },
 
-  /**
-   * Draws the route within a "Gallery Frame" box.
-   */
   drawRoute: (
     ctx: CanvasRenderingContext2D,
     points: NormalizedPoint[],
@@ -39,23 +30,20 @@ export const CanvasEngine = {
 
     const { color, lineWidth, padding, isDark, width, height } = options;
 
-    // 1. Define the Frame Area (Top 78% of the canvas to leave room for HTML footer)
     const frameMargin = width * 0.1; 
     const frameWidth = width - frameMargin * 2;
     const frameHeight = height * 0.78;
     const frameX = frameMargin;
     const frameY = frameMargin;
 
-    // 2. Draw Frame Background
-    ctx.fillStyle = isDark ? "#121212" : "#ffffff";
+    const bgColor = isDark ? "#121212" : "#ffffff";
+    ctx.fillStyle = bgColor;
     ctx.fillRect(frameX, frameY, frameWidth, frameHeight);
 
-    // 3. Draw Frame Border
     ctx.strokeStyle = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)";
     ctx.lineWidth = 1;
     ctx.strokeRect(frameX, frameY, frameWidth, frameHeight);
 
-    // 4. Draw Route inside the frame with internal padding
     const innerPadding = frameWidth * padding;
     const routeDrawWidth = frameWidth - innerPadding * 2;
     const routeDrawHeight = frameHeight - innerPadding * 2;
@@ -81,33 +69,34 @@ export const CanvasEngine = {
 
     ctx.stroke();
 
-    // 5. Draw Start/Finish Dots
-    if (points.length > 0) {
+    if (points.length > 1) {
       const startX = routeOffsetX + points[0].x * routeDrawWidth;
       const startY = routeOffsetY + points[0].y * routeDrawHeight;
       const endX = routeOffsetX + points[points.length - 1].x * routeDrawWidth;
       const endY = routeOffsetY + points[points.length - 1].y * routeDrawHeight;
 
-      // Start Dot (Filled)
+      const indicatorSize = Math.max(width * 0.012, 6);
+
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(startX, startY, lineWidth * 1.5, 0, Math.PI * 2);
+      ctx.arc(startX, startY, indicatorSize, 0, Math.PI * 2);
       ctx.fill();
 
-      // Finish Dot (Outline)
-      ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth * 0.8;
+      const dSize = indicatorSize * 1.2;
+      
+      ctx.strokeStyle = bgColor;
+      ctx.lineWidth = indicatorSize * 0.6;
+      ctx.lineJoin = "miter";
       ctx.beginPath();
-      ctx.arc(endX, endY, lineWidth * 2, 0, Math.PI * 2);
+      ctx.moveTo(endX, endY - dSize);
+      ctx.lineTo(endX + dSize, endY);
+      ctx.lineTo(endX, endY + dSize);
+      ctx.lineTo(endX - dSize, endY);
+      ctx.closePath();
       ctx.stroke();
-      ctx.fillStyle = isDark ? "#121212" : "#ffffff";
+
+      ctx.fillStyle = color;
       ctx.fill();
     }
-  },
-
-  /**
-   * NOTE: drawElevationSparkline and drawStatGrid have been removed.
-   * Labels and statistics are now handled via HTML in the Poster component
-   * to allow for better styling, accessibility, and dynamic layout.
-   */
+  }
 };
