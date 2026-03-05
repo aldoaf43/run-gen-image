@@ -53,9 +53,13 @@ This project follows a modular **"Container-Component-Module"** pattern to separ
 ├── app/                 # Next.js App Router & Server Components
 ├── containers/          # Full screen views and page-specific content
 │   ├── HomeScreen/
-│   └── EditorScreen/
+│   ├── EditorScreen/
+│   └── GuideDrawer/     # GPX Export instructions
 ├── modules/             # Layout-level modules (Sidebar, Navbar)
 ├── components/          # Reusable atomic UI components
+│   ├── Button/
+│   ├── Drawer/          # Responsive Drawer/Modal system
+│   └── Poster/
 ├── lib/                 # Logic engines (Parsing, Canvas Drawing)
 ├── types/               # TypeScript interfaces (centralized)
 ├── utils/               # General utility functions and validation schemas
@@ -149,3 +153,22 @@ import { Map, Download, Settings } from "lucide-react";
 - **Canvas Optimization:** Use `requestAnimationFrame` for interactive updates.
 - **Memoization:** Wrap the `CanvasRenderer` in `React.memo` to prevent re-drawing unless the route or settings change.
 - **Debouncing:** Debounce slider inputs (like "Stroke Weight") to avoid excessive canvas re-paints.
+
+---
+
+## Animation Standards (Framer Motion)
+
+To ensure high performance and accessibility (WCAG), follow these rules for animations:
+
+1.  **Hardware Acceleration:** Always animate `opacity` and `transform` (scale, translate, rotate) to utilize the GPU. Avoid animating layout properties like `width`, `height`, or `top/left`.
+2.  **Viewport Efficiency:** Use `onViewportEnter` and `onViewportLeave` (or `whileInView`) to pause heavy animations (like the Poster Morphing) when they are not visible to the user.
+3.  **Infinite Animation Limits:** Any "infinite" decorative animation must have a logical stop point (e.g., stopping after 12 cycles) to reduce long-term CPU usage and prevent user distraction.
+4.  **Orchestration:** Use `AnimatePresence` with `mode="wait"` for smooth component swapping (morphing effects).
+
+---
+
+## Theming & UI Consistency
+
+1.  **Single Source of Truth:** All color palettes must be defined in `types/poster.ts`. Components (HomeScreen, Editor, etc.) must import from this central registry to ensure the landing page accurately reflects the product.
+2.  **Subtext Standardization:** For activity metadata, always use the format: `Month Day, Year • HH:MM AM/PM` (e.g., `February 3, 2026 • 06:43 PM`).
+3.  **Unit Consistency:** Distances should be in `KM` and elevation in `M` unless a user setting specifically overrides this in the future.
