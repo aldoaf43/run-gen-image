@@ -9,11 +9,13 @@ import {
   Layers,
   Download,
   AlertCircle,
+  HelpCircle,
 } from "lucide-react";
 import { parseGPXFromFile, normalizePoints } from "@/lib/gpx-utils";
 import { Poster } from "@/components/Poster";
 import { NormalizedPoint, Route, PALETTES, Palette } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
+import { GuideDrawer } from "@/containers/GuideDrawer";
 
 interface HomeScreenProps {
   onUpload: (route: Route, points: NormalizedPoint[]) => void;
@@ -83,6 +85,7 @@ export const HomeScreen = ({ onUpload }: HomeScreenProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   // Morphing State
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -180,7 +183,7 @@ export const HomeScreen = ({ onUpload }: HomeScreenProps) => {
               </p>
 
               <div className="flex flex-col gap-4 w-full">
-                <div className="flex flex-col gap-4 sm:flex-row sm:w-auto">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                   <Button
                     size="lg"
                     className="gap-2"
@@ -190,6 +193,14 @@ export const HomeScreen = ({ onUpload }: HomeScreenProps) => {
                     <Upload size={20} strokeWidth={2.5} />
                     Upload GPX
                   </Button>
+
+                  <button
+                    onClick={() => setIsGuideOpen(true)}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+                  >
+                    <HelpCircle size={16} />
+                    How do I get my GPX file?
+                  </button>
                 </div>
 
                 {error && (
@@ -282,6 +293,8 @@ export const HomeScreen = ({ onUpload }: HomeScreenProps) => {
           </div>
         </div>
       </section>
+
+      <GuideDrawer isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
     </div>
   );
 };
