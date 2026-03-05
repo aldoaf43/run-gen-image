@@ -1,4 +1,4 @@
-# GEMINI.md
+    # GEMINI.md
 
 This file provides guidance to the Gemini CLI (and other AI agents) when working with the PathCanvas repository. It defines the standards for code quality, architecture, and the specific logic required for geographic data visualization.
 
