@@ -58,18 +58,3 @@ export type MetricType =
   | "heartRate" 
   | "cadence" 
   | "power";
-
-/**
- * Customizable settings for the poster rendering.
- */
-export interface PosterSettings {
-  title: string;
-  subtext: string;
-  theme: string;
-  isDark: boolean;
-  strokeWidth: number;
-  padding: number;
-  backgroundColor: string;
-  strokeColor: string;
-  metrics: MetricType[];
-}

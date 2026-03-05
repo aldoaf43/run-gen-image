@@ -15,12 +15,13 @@ export const Navbar = () => {
         </Link>
 
         <nav className="flex items-center gap-4">
-          <Link
+          {/* Hide Gallery until ready */}
+          {/* <Link
             href="/gallery"
             className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
           >
             Gallery
-          </Link>
+          </Link> */}
           <Button variant="primary" size="sm" className="hidden sm:flex">
             Get Started
           </Button>

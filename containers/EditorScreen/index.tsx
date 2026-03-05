@@ -3,7 +3,7 @@
 import React, { useState, useRef, useMemo } from "react";
 import { Poster, PosterHandle } from "@/components/Poster";
 import { Button } from "@/components/Button";
-import { Route, NormalizedPoint, PosterSettings, MetricType } from "@/types";
+import { Route, NormalizedPoint, PosterSettings, MetricType, LIGHT_PALETTES, DARK_PALETTES, Palette as PaletteType } from "@/types";
 import { Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon, Footprints, Bike, Mountain, Activity, BarChart3 } from "lucide-react";
 import { toPng } from "html-to-image";
 
@@ -12,22 +12,6 @@ interface EditorScreenProps {
   points: NormalizedPoint[];
   onReset: () => void;
 }
-
-const LIGHT_PALETTES = [
-  { id: "zinc", name: "Zinc", bg: "#fafafa", stroke: "#18181b" },
-  { id: "slate", name: "Slate", bg: "#f8fafc", stroke: "#0f172a" },
-  { id: "stone", name: "Stone", bg: "#fafaf9", stroke: "#1c1917" },
-  { id: "emerald", name: "Emerald", bg: "#f0fdf4", stroke: "#059669" },
-  { id: "rose", name: "Rose", bg: "#fff1f2", stroke: "#be123c" },
-];
-
-const DARK_PALETTES = [
-  { id: "midnight", name: "Midnight", bg: "#020617", stroke: "#38bdf8" },
-  { id: "obsidian", name: "Obsidian", bg: "#09090b", stroke: "#ffffff" },
-  { id: "nordic", name: "Nordic", bg: "#2e3440", stroke: "#d8dee9" },
-  { id: "forest", name: "Forest", bg: "#022c22", stroke: "#6ee7b7" },
-  { id: "deepblue", name: "Deep Blue", bg: "#082f49", stroke: "#7dd3fc" },
-];
 
 const AVAILABLE_METRICS: { id: MetricType; label: string }[] = [
   { id: "distance", label: "Distance" },
@@ -104,7 +88,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
     }
   };
 
-  const selectPalette = (palette: typeof LIGHT_PALETTES[0], isPaletteDark: boolean) => {
+  const selectPalette = (palette: PaletteType, isPaletteDark: boolean) => {
     setSettings({
       ...settings,
       theme: palette.id,

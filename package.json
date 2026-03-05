@@ -11,6 +11,7 @@
   "dependencies": {
     "@tanstack/react-form": "^1.28.3",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.35.0",
     "gpxparser": "^3.0.8",
     "html-to-image": "^1.11.13",
     "lucide-react": "^0.574.0",
