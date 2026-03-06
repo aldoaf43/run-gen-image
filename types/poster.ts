@@ -13,6 +13,7 @@ export interface PosterSettings {
   backgroundColor: string;
   strokeColor: string;
   metrics: MetricType[];
+  smoothing: number;
 }
 
 /**

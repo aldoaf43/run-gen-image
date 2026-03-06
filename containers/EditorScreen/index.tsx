@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useCallback } from "react";
 import { Poster, PosterHandle } from "@/components/Poster";
 import { Button } from "@/components/Button";
 import { Route, NormalizedPoint, PosterSettings, MetricType, LIGHT_PALETTES, DARK_PALETTES, Palette as PaletteType } from "@/types";
-import { Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon, Footprints, Bike, Mountain, Activity, BarChart3 } from "lucide-react";
+import { Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon, Footprints, Bike, Mountain, Activity, BarChart3, Wand2 } from "lucide-react";
 import { toPng } from "html-to-image";
+import { smoothPoints, normalizePoints } from "@/lib/gpx-utils";
 
 interface EditorScreenProps {
   route: Route;
@@ -30,7 +31,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
   const [activityType, setActivityType] = useState<Route["activityType"]>(route.activityType || "run");
   const [isExporting, setIsExporting] = useState(false);
 
-  const isMetricAvailable = (metricId: MetricType) => {
+  const isMetricAvailable = useCallback((metricId: MetricType) => {
     switch (metricId) {
       case "distance": return route.distance > 0;
       case "elevation": return route.elevationGain > 0;
@@ -43,12 +44,12 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
       case "power": return route.avgPower !== undefined;
       default: return false;
     }
-  };
+  }, [route]);
 
   const initialMetrics = useMemo(() => {
     const defaults: MetricType[] = ["distance", "elevation", "time", "pace"];
     return defaults.filter(isMetricAvailable).slice(0, 4);
-  }, [route]);
+  }, [isMetricAvailable]);
 
   const [settings, setSettings] = useState<PosterSettings>({
     title: route.name,
@@ -60,7 +61,14 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
     backgroundColor: "#fafafa",
     strokeColor: "#18181b",
     metrics: initialMetrics,
+    smoothing: 1,
   });
+
+  const displayedPoints = useMemo(() => {
+    if (settings.smoothing <= 1) return points;
+    const smoothed = smoothPoints(route.points, settings.smoothing * 2);
+    return normalizePoints(smoothed, route.boundingBox);
+  }, [route.points, route.boundingBox, settings.smoothing, points]);
 
   const handleDownload = async () => {
     const node = posterRef.current?.getContainer();
@@ -334,6 +342,28 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
               </div>
 
               <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Wand2 size={14} className="text-zinc-400" />
+                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Path Smoothing</label>
+                  </div>
+                  <span className="text-xs font-bold text-zinc-500">{settings.smoothing === 1 ? "None" : `${settings.smoothing}`}</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={settings.smoothing}
+                  onChange={(e) => setSettings({ ...settings, smoothing: parseInt(e.target.value) })}
+                  className="w-full accent-zinc-950 dark:accent-zinc-50"
+                />
+                <p className="text-[10px] text-zinc-400 leading-tight">
+                  Reduces GPS jitter and noise. Higher values result in more rounded curves but may deviate from the exact path.
+                </p>
+              </div>
+
+              <div className="space-y-4">
                 <div className="flex justify-between">
                   <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Line Weight</label>
                   <span className="text-xs text-zinc-500">{settings.strokeWidth}px</span>
@@ -380,7 +410,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
         <div className="w-full max-w-[500px] transition-transform duration-300">
           <Poster
             ref={posterRef}
-            points={points}
+            points={displayedPoints}
             title={settings.title}
             subtext={settings.subtext}
             theme={settings.theme}
