@@ -4,7 +4,7 @@ import React, { useState, useRef, useMemo, useCallback } from "react";
 import { Poster, PosterHandle } from "@/components/Poster";
 import { Button } from "@/components/Button";
 import { Route, NormalizedPoint, PosterSettings, MetricType, LIGHT_PALETTES, DARK_PALETTES, Palette as PaletteType } from "@/types";
-import { Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon, Footprints, Bike, Mountain, Activity, BarChart3, Wand2 } from "lucide-react";
+import { Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon, Footprints, Bike, Mountain, Activity, BarChart3, Wand2, Share2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { smoothPoints, normalizePoints } from "@/lib/gpx-utils";
 
@@ -30,6 +30,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
   const posterRef = useRef<PosterHandle>(null);
   const [activityType, setActivityType] = useState<Route["activityType"]>(route.activityType || "run");
   const [isExporting, setIsExporting] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   const isMetricAvailable = useCallback((metricId: MetricType) => {
     switch (metricId) {
@@ -96,6 +97,44 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
     }
   };
 
+  const handleShare = async () => {
+    const node = posterRef.current?.getContainer();
+    if (!node) return;
+
+    if (!navigator.share) {
+      alert("Sharing is not supported in this browser. Try downloading the image instead.");
+      return;
+    }
+
+    setIsSharing(true);
+
+    try {
+      const dataUrl = await toPng(node, {
+        pixelRatio: 3,
+        cacheBust: true,
+      });
+
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const fileName = `${settings.title.toLowerCase().replace(/\s+/g, "-")}-poster.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "My Activity Poster",
+          text: `Check out my activity: ${settings.title}`,
+        });
+      } else {
+        alert("Sharing files is not supported in this browser.");
+      }
+    } catch (err) {
+      console.error("Failed to share image:", err);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   const selectPalette = (palette: PaletteType, isPaletteDark: boolean) => {
     setSettings({
       ...settings,
@@ -118,22 +157,25 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)] flex-col bg-zinc-50 dark:bg-zinc-950 lg:flex-row">
-      <aside className="w-full border-r border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-black lg:max-w-md lg:overflow-y-auto">
-        <div className="mb-8 flex items-center justify-between">
-          <Button variant="ghost" size="sm" className="gap-2 px-0 hover:bg-transparent" onClick={onReset}>
-            <ArrowLeft size={16} />
-            Back to Home
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleDownload} disabled={isExporting} className="gap-2">
-              <Download size={16} />
-              {isExporting ? "Exporting..." : "Export"}
+    <div className="flex h-[calc(100vh-64px)] flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950 lg:flex-row">
+      <aside className="order-2 w-full flex-1 overflow-y-auto border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black lg:order-1 lg:max-w-md lg:flex-none lg:border-r lg:border-t-0">
+        {/* Sticky Sidebar Header */}
+        <div className="sticky top-0 z-10 border-b border-zinc-100 bg-white/80 p-4 backdrop-blur-md dark:border-zinc-900 dark:bg-black/80">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hidden lg:flex h-8 w-8 items-center justify-center p-0 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900" 
+              onClick={onReset}
+              title="Back to Home"
+            >
+              <ArrowLeft size={18} />
             </Button>
+            <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-100">Design Studio</h2>
           </div>
         </div>
 
-        <div className="space-y-8 pb-10">
+        <div className="space-y-8 p-6 pb-10">
           <div>
             <div className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-400">
               <Type size={14} />
@@ -396,18 +438,27 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-12 pt-8 border-t border-zinc-100 dark:border-zinc-900">
-          <Button variant="ghost" className="w-full gap-2 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20" onClick={onReset}>
-            <Trash2 size={16} />
-            Discard Project
-          </Button>
+          <div className="pt-8 border-t border-zinc-100 dark:border-zinc-900">
+            <Button variant="ghost" className="w-full gap-2 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20" onClick={onReset}>
+              <Trash2 size={16} />
+              Discard Project
+            </Button>
+          </div>
         </div>
       </aside>
 
-      <main className="flex flex-1 items-center justify-center p-8 lg:p-12 overflow-hidden">
-        <div className="w-full max-w-[500px] transition-transform duration-300">
+      <main className="relative order-1 flex h-[55vh] shrink-0 items-center justify-center bg-zinc-100 p-2 dark:bg-zinc-900/50 lg:order-2 lg:h-full lg:flex-1 lg:p-12 overflow-hidden">
+        {/* Floating Back Button - Mobile Only */}
+        <button 
+          onClick={onReset}
+          className="lg:hidden absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white/80 text-zinc-600 shadow-lg backdrop-blur-md transition-all hover:bg-white hover:text-zinc-950 dark:border-zinc-800 dark:bg-black/80 dark:text-zinc-400 dark:hover:bg-black dark:hover:text-zinc-50 sm:left-6 sm:top-6"
+          title="Back to Home"
+        >
+          <ArrowLeft size={20} />
+        </button>
+
+        <div className="w-full max-w-112.5 scale-70 transition-transform duration-300 sm:scale-90 lg:scale-100">
           <Poster
             ref={posterRef}
             points={displayedPoints}
@@ -430,6 +481,57 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             backgroundColor={settings.backgroundColor}
             strokeColor={settings.strokeColor}
           />
+        </div>
+
+        {/* Mobile Floating Bar - anchored below canvas */}
+        <div className="absolute bottom-1/6 -right-3 flex flex-col -translate-x-1/2 items-center gap-2 rounded-2xl lg:hidden">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="flex h-10 items-center gap-2 rounded-xl bg-transparent shadow-none hover:bg-zinc-100 dark:hover:bg-zinc-900" 
+            onClick={handleDownload} 
+            disabled={isExporting || isSharing}
+          >
+            <Download size={18} />
+          </Button>
+          <Button 
+            variant="primary" 
+            size="sm"
+            className="flex h-10 items-center gap-2 rounded-xl shadow-lg" 
+            onClick={handleShare} 
+            disabled={isExporting || isSharing}
+          >
+            <Share2 size={18} />
+          </Button>
+        </div>
+
+        {/* Desktop Floating Toolbar - Stacked Right */}
+        <div className="absolute bottom-8 right-8 hidden flex-col items-end gap-3 lg:flex">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownload}
+            disabled={isExporting || isSharing}
+            className="group flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white/80 p-0 shadow-xl backdrop-blur-md transition-all hover:w-36 dark:border-zinc-800 dark:bg-black/80"
+          >
+            <div className="flex w-36 shrink-0 items-center justify-start px-3.5 gap-3">
+              <Download size={20} className="shrink-0" />
+              <span className="whitespace-nowrap font-bold uppercase tracking-widest opacity-0 transition-opacity group-hover:opacity-100">Download</span>
+            </div>
+          </Button>
+          
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleShare}
+            disabled={isExporting || isSharing}
+            className="group flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl p-0 shadow-xl transition-all hover:w-32"
+          >
+            <div className="flex w-32 shrink-0 items-center justify-start px-3.5 gap-3">
+              <Share2 size={20} className="shrink-0" />
+              <span className="whitespace-nowrap font-bold uppercase tracking-widest opacity-0 transition-opacity group-hover:opacity-100">Share</span>
+            </div>
+          </Button>
         </div>
       </main>
     </div>
