@@ -7,6 +7,7 @@ interface DrawOptions {
   isDark: boolean;
   width: number;
   height: number;
+  smooth?: boolean;
 }
 
 interface StatData {
@@ -28,7 +29,7 @@ export const CanvasEngine = {
   ) => {
     if (points.length < 2) return;
 
-    const { color, lineWidth, padding, isDark, width, height } = options;
+    const { color, lineWidth, padding, isDark, width, height, smooth = true } = options;
 
     const frameMargin = width * 0.1; 
     const frameWidth = width - frameMargin * 2;
@@ -56,16 +57,46 @@ export const CanvasEngine = {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    points.forEach((point, index) => {
-      const x = routeOffsetX + point.x * routeDrawWidth;
-      const y = routeOffsetY + point.y * routeDrawHeight;
+    if (smooth && points.length > 2) {
+      const firstX = routeOffsetX + points[0].x * routeDrawWidth;
+      const firstY = routeOffsetY + points[0].y * routeDrawHeight;
+      ctx.moveTo(firstX, firstY);
 
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
+      for (let i = 1; i < points.length - 2; i++) {
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        
+        const xc = routeOffsetX + ((p1.x + p2.x) / 2) * routeDrawWidth;
+        const yc = routeOffsetY + ((p1.y + p2.y) / 2) * routeDrawHeight;
+        
+        ctx.quadraticCurveTo(
+          routeOffsetX + p1.x * routeDrawWidth,
+          routeOffsetY + p1.y * routeDrawHeight,
+          xc,
+          yc
+        );
       }
-    });
+
+      // For the last 2 points
+      const n = points.length;
+      ctx.quadraticCurveTo(
+        routeOffsetX + points[n - 2].x * routeDrawWidth,
+        routeOffsetY + points[n - 2].y * routeDrawHeight,
+        routeOffsetX + points[n - 1].x * routeDrawWidth,
+        routeOffsetY + points[n - 1].y * routeDrawHeight
+      );
+    } else {
+      points.forEach((point, index) => {
+        const x = routeOffsetX + point.x * routeDrawWidth;
+        const y = routeOffsetY + point.y * routeDrawHeight;
+
+        if (index === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+    }
 
     ctx.stroke();
 

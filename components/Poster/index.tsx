@@ -15,6 +15,7 @@ interface PosterProps {
   backgroundColor?: string;
   strokeColor?: string;
   metrics?: MetricType[];
+  smooth?: boolean;
   // Stats
   distance?: number;
   elevationGain?: number;
@@ -43,6 +44,7 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
   backgroundColor,
   strokeColor,
   metrics = ["distance", "elevation", "time", "pace"],
+  smooth = true,
   distance,
   elevationGain,
   elevationLoss,
@@ -98,12 +100,13 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
         isDark: isDark,
         width: rect.width,
         height: rect.height,
+        smooth: smooth,
       });
     };
 
     const animationId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationId);
-  }, [points, colors, strokeWidth, padding, isDark]);
+  }, [points, colors, strokeWidth, padding, isDark, smooth]);
 
   const formatTime = (seconds?: number) => {
     if (!seconds) return "0:00";

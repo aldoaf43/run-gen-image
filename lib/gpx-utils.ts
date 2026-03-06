@@ -25,6 +25,101 @@ export const calculateBoundingBox = (points: Point[]): BoundingBox => {
 };
 
 /**
+ * Simplifies a set of GPS points using the Ramer-Douglas-Peucker algorithm.
+ * Reduces the number of points while preserving the overall shape.
+ */
+export const simplifyPoints = (points: Point[], tolerance: number): Point[] => {
+  if (points.length <= 2 || tolerance <= 0) return points;
+
+  const sqTolerance = tolerance * tolerance;
+
+  const getSqDist = (p1: Point, p2: Point) => {
+    const dx = p1.lon - p2.lon;
+    const dy = p1.lat - p2.lat;
+    return dx * dx + dy * dy;
+  };
+
+  const getSqSegDist = (p: Point, p1: Point, p2: Point) => {
+    let x = p1.lon, y = p1.lat;
+    let dx = p2.lon - x, dy = p2.lat - y;
+
+    if (dx !== 0 || dy !== 0) {
+      const t = ((p.lon - x) * dx + (p.lat - y) * dy) / (dx * dx + dy * dy);
+      if (t > 1) {
+        x = p2.lon;
+        y = p2.lat;
+      } else if (t > 0) {
+        x += dx * t;
+        y += dy * t;
+      }
+    }
+
+    dx = p.lon - x;
+    dy = p.lat - y;
+    return dx * dx + dy * dy;
+  };
+
+  const simplifyStep = (pts: Point[], first: number, last: number, sqTol: number, simplified: Point[]) => {
+    let maxSqDist = sqTol;
+    let index = -1;
+
+    for (let i = first + 1; i < last; i++) {
+      const sqDist = getSqSegDist(pts[i], pts[first], pts[last]);
+      if (sqDist > maxSqDist) {
+        index = i;
+        maxSqDist = sqDist;
+      }
+    }
+
+    if (index !== -1) {
+      if (index - first > 1) simplifyStep(pts, first, index, sqTol, simplified);
+      simplified.push(pts[index]);
+      if (last - index > 1) simplifyStep(pts, index, last, sqTol, simplified);
+    }
+  };
+
+  const simplified = [points[0]];
+  simplifyStep(points, 0, points.length - 1, sqTolerance, simplified);
+  simplified.push(points[points.length - 1]);
+
+  return simplified;
+};
+
+/**
+ * Smooths GPS points using a Simple Moving Average (SMA).
+ * Reduces jitter and noise in raw data.
+ */
+export const smoothPoints = (points: Point[], windowSize: number): Point[] => {
+  if (points.length < 3 || windowSize <= 1) return points;
+
+  const result: Point[] = [];
+  const halfWindow = Math.floor(windowSize / 2);
+
+  for (let i = 0; i < points.length; i++) {
+    let sumLat = 0;
+    let sumLon = 0;
+    let count = 0;
+
+    const start = Math.max(0, i - halfWindow);
+    const end = Math.min(points.length - 1, i + halfWindow);
+
+    for (let j = start; j <= end; j++) {
+      sumLat += points[j].lat;
+      sumLon += points[j].lon;
+      count++;
+    }
+
+    result.push({
+      ...points[i],
+      lat: sumLat / count,
+      lon: sumLon / count,
+    });
+  }
+
+  return result;
+};
+
+/**
  * Normalizes a set of GPS points into a 0.0 to 1.0 coordinate system.
  * Maintains aspect ratio and flips the Y-axis so North is "Up".
  */
