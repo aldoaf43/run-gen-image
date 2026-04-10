@@ -508,28 +508,28 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
         {/* Desktop Floating Toolbar - Stacked Right */}
         <div className="absolute bottom-8 right-8 hidden flex-col items-end gap-3 lg:flex">
           <Button
-            variant="outline"
-            size="sm"
+            variant="secondary"
+            size="md"
             onClick={handleDownload}
             disabled={isExporting || isSharing}
-            className="group flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white/80 p-0 shadow-xl backdrop-blur-md transition-all hover:w-36 dark:border-zinc-800 dark:bg-black/80"
+            className="group flex items-center justify-center overflow-hidden"
           >
-            <div className="flex w-36 shrink-0 items-center justify-start px-3.5 gap-3">
+            <div className="flex gap-3">
               <Download size={20} className="shrink-0" />
-              <span className="whitespace-nowrap font-bold uppercase tracking-widest opacity-0 transition-opacity group-hover:opacity-100">Download</span>
+              <span className="whitespace-nowrap font-bold uppercase tracking-widest">Download</span>
             </div>
           </Button>
           
           <Button
             variant="primary"
-            size="sm"
+            size="md"
             onClick={handleShare}
             disabled={isExporting || isSharing}
-            className="group flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl p-0 shadow-xl transition-all hover:w-32"
+            className="group flex items-center justify-center overflow-hidden"
           >
-            <div className="flex w-32 shrink-0 items-center justify-start px-3.5 gap-3">
+            <div className="flex gap-3">
               <Share2 size={20} className="shrink-0" />
-              <span className="whitespace-nowrap font-bold uppercase tracking-widest opacity-0 transition-opacity group-hover:opacity-100">Share</span>
+              <span className="whitespace-nowrap font-bold uppercase tracking-widest">Share</span>
             </div>
           </Button>
         </div>
