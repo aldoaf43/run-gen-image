@@ -75,7 +75,10 @@ Handling GPS data is the technical "core" of the app. Follow these rules strictl
 1.  **Normalization:** GPS coordinates (Latitude/Longitude) must be scaled to fit a 2:3 aspect ratio (standard poster size).
 2.  **Axis Flipping:** In the Canvas API, Y=0 is the top. In geographic coordinates, Latitude values increase going North (Up). You must flip the Y-coordinates during normalization to prevent the route from appearing upside down.
 3.  **Bounding Box:** Calculate the bounds (min/max Lat/Lon) of the route to center it perfectly on the canvas with a consistent margin.
-4.  **Smoothing:** Use the Ramer-Douglas-Peucker algorithm or a simple moving average to reduce "jitter" in raw GPS data.
+4.  **Smoothing:** Both data-level and visual-level smoothing are implemented.
+    *   **Data Smoothing:** Uses a Simple Moving Average (SMA) in `lib/gpx-utils.ts` to reduce raw GPS jitter. A slider in the Editor Screen controls the window size (1 to 10).
+    *   **Visual Smoothing:** The `CanvasEngine` in `lib/canvas-engine.ts` uses **Quadratic Bezier curves** through midpoints to render flowing, aesthetic lines instead of sharp polyline segments.
+    *   **Simplification:** The Ramer-Douglas-Peucker (RDP) algorithm is available in `lib/gpx-utils.ts` for path simplification when needed.
 5.  **Indicators:** Start and finish markers must use a **fixed relative size** (relative to canvas width) rather than a multiple of the stroke width. For overlapping points (loops), use the **"Visual Cutout" pattern** (background-colored halo) to distinguish them.
 
 ---
