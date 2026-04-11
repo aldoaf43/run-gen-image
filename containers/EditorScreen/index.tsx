@@ -3,7 +3,7 @@
 import React, { useState, useRef, useMemo, useCallback } from "react";
 import { Poster, PosterHandle } from "@/components/Poster";
 import { Button } from "@/components/Button";
-import { Route, NormalizedPoint, PosterSettings, MetricType, LIGHT_PALETTES, DARK_PALETTES, Palette as PaletteType } from "@/types";
+import { Route, NormalizedPoint, PosterSettings, MetricType, PALETTES, LIGHT_PALETTES, DARK_PALETTES, Palette as PaletteType } from "@/types";
 import { Download, Trash2, ArrowLeft, Palette, Type, Sliders, Check, Sun, Moon, Footprints, Bike, Mountain, Activity, BarChart3, Wand2, Share2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { smoothPoints, normalizePoints } from "@/lib/gpx-utils";
@@ -61,6 +61,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
     padding: 0.15,
     backgroundColor: "#fafafa",
     strokeColor: "#18181b",
+    titleColor: "#18181b",
     metrics: initialMetrics,
     smoothing: 1,
   });
@@ -142,7 +143,24 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
       isDark: isPaletteDark,
       backgroundColor: palette.bg,
       strokeColor: palette.stroke,
+      titleColor: palette.stroke,
     });
+  };
+
+  const handleFrameStyleChange = (targetIsDark: boolean) => {
+    const newSettings = { ...settings, isDark: targetIsDark };
+    
+    if (settings.theme !== "custom") {
+      const palette = PALETTES.find(p => p.id === settings.theme);
+      if (palette) {
+        newSettings.strokeColor = targetIsDark === palette.isDark 
+          ? palette.stroke 
+          : palette.strokeAlt;
+        newSettings.titleColor = palette.stroke;
+      }
+    }
+    
+    setSettings(newSettings);
   };
 
   const toggleMetric = (metricId: MetricType) => {
@@ -348,6 +366,15 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
                       className="h-8 w-12 cursor-pointer rounded border-none bg-transparent"
                     />
                   </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Title Color</label>
+                    <input
+                      type="color"
+                      value={settings.titleColor}
+                      onChange={(e) => setSettings({ ...settings, titleColor: e.target.value })}
+                      className="h-8 w-12 cursor-pointer rounded border-none bg-transparent"
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -363,7 +390,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
                 <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Inner Canvas Style</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => setSettings({ ...settings, isDark: false })}
+                    onClick={() => handleFrameStyleChange(false)}
                     className={`flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-medium transition-all ${
                       !settings.isDark ? "bg-zinc-950 text-white dark:bg-zinc-50 dark:text-black" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400"
                     }`}
@@ -372,7 +399,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
                     Light Frame
                   </button>
                   <button
-                    onClick={() => setSettings({ ...settings, isDark: true })}
+                    onClick={() => handleFrameStyleChange(true)}
                     className={`flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-medium transition-all ${
                       settings.isDark ? "bg-zinc-950 text-white dark:bg-zinc-50 dark:text-black" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400"
                     }`}
@@ -480,6 +507,7 @@ export const EditorScreen = ({ route, points, onReset }: EditorScreenProps) => {
             activityType={activityType}
             backgroundColor={settings.backgroundColor}
             strokeColor={settings.strokeColor}
+            titleColor={settings.titleColor}
           />
         </div>
 

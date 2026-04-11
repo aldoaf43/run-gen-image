@@ -14,6 +14,7 @@ interface PosterProps {
   padding?: number;
   backgroundColor?: string;
   strokeColor?: string;
+  titleColor?: string;
   metrics?: MetricType[];
   smooth?: boolean;
   // Stats
@@ -43,6 +44,7 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
   padding = 0.15,
   backgroundColor,
   strokeColor,
+  titleColor,
   metrics = ["distance", "elevation", "time", "pace"],
   smooth = true,
   distance,
@@ -69,9 +71,9 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
     return { 
       bg: backgroundColor || "#ffffff", 
       line: strokeColor || "#000000", 
-      text: strokeColor || "#000000" 
+      text: titleColor || "#000000" 
     };
-  }, [theme, backgroundColor, strokeColor]);
+  }, [theme, backgroundColor, strokeColor, titleColor]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -165,7 +167,7 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
   return (
     <div 
       ref={containerRef}
-      className={`relative aspect-[2/3] w-full overflow-hidden rounded shadow-xl @container ${className}`}
+      className={`relative aspect-2/3 w-full overflow-hidden rounded shadow-xl @container ${className}`}
       style={{ backgroundColor: colors.bg }}
     >
       <canvas
@@ -176,13 +178,13 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
       
       <div 
         className="absolute inset-x-0 bottom-0 flex flex-col items-center pb-[8cqw] pt-[2cqw]"
-        style={{ color: colors.text }}
       >
         {renderedMetrics.length > 0 && (
           <div 
             className={`mb-[6cqw] grid w-full gap-[2cqw] px-[8cqw] text-center`}
             style={{ 
-              gridTemplateColumns: `repeat(${renderedMetrics.length}, minmax(0, 1fr))` 
+              gridTemplateColumns: `repeat(${renderedMetrics.length}, minmax(0, 1fr))`,
+              color: colors.line
             }}
           >
             {renderedMetrics.map((m, i) => (
@@ -194,15 +196,20 @@ export const Poster = React.memo(forwardRef<PosterHandle, PosterProps>(({
           </div>
         )}
 
-        <div className="flex items-center gap-[2cqw]">
-          <ActivityIcon size={32} strokeWidth={2.5} className="h-[5cqw] w-[5cqw] opacity-80" />
-          <h1 className="text-[5cqw] font-black tracking-tighter uppercase leading-none">
-            {title}
-          </h1>
+        <div 
+          className="flex flex-col items-center"
+          style={{ color: colors.text }}
+        >
+          <div className="flex items-center gap-[2cqw]">
+            <ActivityIcon size={32} strokeWidth={2.5} className="h-[5cqw] w-[5cqw] opacity-80" />
+            <h1 className="text-[5cqw] font-black tracking-tighter uppercase leading-none">
+              {title}
+            </h1>
+          </div>
+          <p className="mt-[1cqw] text-[2.2cqw] font-bold opacity-60 uppercase tracking-[0.2em]">
+            {subtext}
+          </p>
         </div>
-        <p className="mt-[1cqw] text-[2.2cqw] font-bold opacity-60 uppercase tracking-[0.2em]">
-          {subtext}
-        </p>
       </div>
     </div>
   );
